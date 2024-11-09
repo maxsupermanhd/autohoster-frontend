@@ -13,15 +13,15 @@ func reportHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	wzprofile2 := -1
+	profileCount := 0
 	var lastreport time.Time
-	err := dbpool.QueryRow(r.Context(), `SELECT coalesce(wzprofile2, -1), lastreport FROM accounts WHERE username = $1`, sessionGetUsername(r)).Scan(&wzprofile2, &lastreport)
+	err := dbpool.QueryRow(r.Context(), `SELECT a.last_report, (SELECT count(*) FROM identities WHERE account = a.id) FROM accounts as a WHERE username = $1`, sessionGetUsername(r)).Scan(&lastreport, &profileCount)
 	if err != nil {
 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Error occured, contact administrator"})
 		log.Println(err)
 		return
 	}
-	if wzprofile2 < 0 {
+	if profileCount == 0 {
 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "You must link in-game profile first to be able to report others"})
 		return
 	}
@@ -63,7 +63,7 @@ func reportHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = dbpool.Exec(r.Context(), `UPDATE accounts SET lastreport = now() WHERE username = $1`, sessionGetUsername(r))
+	_, err = dbpool.Exec(r.Context(), `UPDATE accounts SET last_report = now() WHERE username = $1`, sessionGetUsername(r))
 	if err != nil {
 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Error occured, contact administrator"})
 		log.Println(err)
