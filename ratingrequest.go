@@ -70,7 +70,7 @@ func ratingLookup(hash string, gameVersion string) Ra {
 	if hash == "a0c124533ddcaf5a19cc7d593c33d750680dc428b0021672e0b86a9b0dcfd711" {
 		m.Autohoster = true
 		var c int
-		derr := dbpool.QueryRow(context.Background(), "select count(games) from games where hidden = false and deleted = false;").Scan(&c)
+		derr := dbpool.QueryRow(context.Background(), "select count(*) from games where hidden = false and deleted = false;").Scan(&c)
 		if derr != nil {
 			log.Print(derr)
 		}
