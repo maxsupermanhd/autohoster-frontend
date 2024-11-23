@@ -199,7 +199,7 @@ left join s3 on s1.lacc = s3.racc`, hash).Scan(
 	if !ok {
 		m.Details = "Not participated in rated games\n"
 		m.NameTextColorOverride = [3]int{0x66, 0x66, 0x66}
-		m.EloTextColorOverride = [3]int{0xbb, 0xff, 0xbb}
+		m.EloTextColorOverride = [3]int{0xbb, 0xbb, 0xbb}
 		m.Elo = fmt.Sprintf("Not rated (% 4d wins)", lwins)
 		return m
 	}
