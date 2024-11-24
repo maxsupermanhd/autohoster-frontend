@@ -186,6 +186,9 @@ func hashPassword(pwd string) string {
 	return string(hash)
 }
 func comparePasswords(hashedPwd string, plainPwd string) bool {
+	if hashedPwd == "nologin" {
+		return false
+	}
 	err := bcrypt.CompareHashAndPassword([]byte(hashedPwd), []byte(plainPwd))
 	if err != nil {
 		log.Println(err)
