@@ -232,6 +232,9 @@ func validateEmail(u string) bool {
 }
 
 func sendgridConfirmcode(email string, code string) error {
+	if email == "noemail" {
+		return nil
+	}
 	sendstr := fmt.Sprintf(`{
 	"personalizations": [
 		{
