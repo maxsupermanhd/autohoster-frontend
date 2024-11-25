@@ -99,16 +99,7 @@ func APIgetLeaderboard(_ http.ResponseWriter, r *http.Request) (int, any) {
 	if err != nil {
 		return 500, err
 	}
-	return genericViewRequest[struct {
-		DisplayName string
-		Account     int
-		Category    int
-		Elo         int
-		Played      int
-		Won         int
-		Lost        int
-		TimePlayed  int
-	}](r, genericRequestParams{
+	return genericViewRequest[LeaderboardEntry](r, genericRequestParams{
 		tableName:               "leaderboard",
 		limitClamp:              500,
 		sortDefaultOrder:        "desc",
@@ -120,10 +111,10 @@ func APIgetLeaderboard(_ http.ResponseWriter, r *http.Request) (int, any) {
 		searchSimilarity:        0.3,
 		addWhereCase:            fmt.Sprintf("category = %d AND played > 0", category),
 		columnMappings: map[string]string{
-			"Won":         "won",
-			"Lost":        "lost",
-			"Elo":         "elo",
-			"DisplayName": "display_name",
+			"Won":  "won",
+			"Lost": "lost",
+			"Elo":  "elo",
+			"Name": "display_name",
 		},
 	})
 }

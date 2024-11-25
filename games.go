@@ -39,7 +39,6 @@ type Player struct {
 	Usertype       string
 	Rating         *PlayerRating
 	Account        int
-	DisplayName    string
 	Props          map[string]any
 }
 
@@ -93,14 +92,13 @@ func DbGameDetailsHandler(w http.ResponseWriter, r *http.Request) {
 	g.display_category,
 	jsonb_pretty(json_agg(json_build_object(
 		'Position', p.position,
-		'Name', 'noname',
 		'Team', p.team,
 		'Usertype', p.usertype,
 		'Color', p.color,
 		'Identity', i.id,
 		'IdentityPubKey', encode(i.pkey, 'hex'),
 		'Account', a.id,
-		'DisplayName', coalesce(a.display_name, 'noname'),
+		'Name', coalesce(a.display_name, 'noname'),
 		'Rating', (select r from rating as r where r.category = g.display_category and r.account = i.account),
 		'Props', p.props
 	))::jsonb) as players
@@ -259,7 +257,7 @@ func APIgetGames(_ http.ResponseWriter, r *http.Request) (int, any) {
 	if reqSearch != "" {
 		orderargs = append(orderargs, reqSearch)
 		argnum := len(whereargs) + 1
-		ordercase = fmt.Sprintf("ORDER BY max(similarity(coalesce(i.name, a.display_name), $%d::text)) desc, %s %s", argnum, reqSortField, reqSortOrder)
+		ordercase = fmt.Sprintf("ORDER BY max(similarity(a.display_name, $%d::text)) desc, %s %s", argnum, reqSortField, reqSortOrder)
 	}
 
 	limiter := fmt.Sprintf("LIMIT %d", reqLimit)
@@ -333,14 +331,13 @@ select
 	g.display_category,
 	json_agg(json_build_object(
 		'Position', p.position,
-		'Name', 'noname',
 		'Team', p.team,
 		'Usertype', p.usertype,
 		'Color', p.color,
 		'Identity', i.id,
 		'IdentityPubKey', encode(i.pkey, 'hex'),
 		'Account', a.id,
-		'DisplayName', coalesce(a.display_name, 'noname'),
+		'Name', coalesce(a.display_name, 'noname'),
 		'Rating', (select r from rating as r where r.category = g.display_category and r.account = i.account)
 	)) as players
 from games as g

@@ -49,14 +49,13 @@ func APIgetResearchSummary(w http.ResponseWriter, r *http.Request) (int, any) {
 	coalesce(research_log, '[]')::jsonb,
 	json_agg(json_build_object(
 		'Position', p.position,
-		'Name', i.name,
 		'Team', p.team,
 		'Usertype', p.usertype,
 		'Color', p.color,
 		'Identity', i.id,
 		'IdentityPubKey', encode(i.pkey, 'hex'),
 		'Account', a.id,
-		'DisplayName', coalesce(i.name, a.display_name),
+		'Name', coalesce(a.display_name, 'noname'),
 		'Rating', (select r from rating as r where r.category = g.display_category and r.account = i.account),
 		'Props', p.props
 	))::jsonb,
@@ -74,7 +73,7 @@ GROUP BY 1, 3`, gid).Scan(&researchLog, &players, &settingAlliance)
 		return 500, err
 	}
 
-	isShared := settingAlliance == 2
+	displayTeams := settingAlliance == 2 && len(players) > 2
 
 	teams := []struct {
 		index     int
@@ -464,13 +463,13 @@ GROUP BY 1, 3`, gid).Scan(&researchLog, &players, &settingAlliance)
 		ret += `<tr>`
 		ret += fmt.Sprintf(`<td><a onclick="rsToggle('.rsPath%d');">👁</a></td>`, i)
 		ret += `<td>` + v[0] + `</td>`
-		if isShared {
+		if displayTeams {
 			for _, t := range teams {
 				ret += fmt.Sprintf(`<td>%c</td>`, "ABCDEFGHIJKLM"[t.index])
 			}
 		} else {
 			for _, pl := range players {
-				ret += fmt.Sprintf(`<td class="wz-color-background-%d">%s</td>`, pl.Color, pl.DisplayName)
+				ret += fmt.Sprintf(`<td class="wz-color-background-%d">%s</td>`, pl.Color, pl.Name)
 			}
 		}
 		ret += `</tr>`
@@ -485,7 +484,7 @@ GROUP BY 1, 3`, gid).Scan(&researchLog, &players, &settingAlliance)
 	<img src="https://betaguide.wz2100.net/img/data_icons/Research/` + getResearchName(r) + `.gif"></a></td>`
 			ret += `<td><a href="https://betaguide.wz2100.net/research.html?details_id=` + r + `">` + getResearchName(r) + `<br>` + r + `</a></td>`
 
-			if isShared {
+			if displayTeams {
 				for t := range teams {
 					tRes := findTeamResTime(r, teams[t].positions)
 					tcont := `∅`

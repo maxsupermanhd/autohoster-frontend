@@ -182,8 +182,8 @@ func hostRequestHandlerGET(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	admins := []*struct {
-		DisplayName string
-		ID          int
+		Name string
+		ID   int
 	}{}
 	err := pgxscan.Select(r.Context(), dbpool, &admins, `select distinct on (a.id) a.display_name, a.id
 from accounts as a
