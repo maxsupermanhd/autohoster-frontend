@@ -18,6 +18,7 @@ type RatingCategory struct {
 	TimeStarts **time.Time
 	TimeEnds   **time.Time
 	Name       string
+	Variant    string
 }
 
 func GetRatingCategories(ctx context.Context, db *pgxpool.Pool) ([]*RatingCategory, error) {
