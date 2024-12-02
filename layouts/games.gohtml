@@ -27,52 +27,25 @@
 				<style> yes-script { display:none; } </style>
 			</noscript>
 			<yes-script>
-			<table id="table" class="smart-table"
-			data-total-not-filtered="{.Total}"
-			data-url="/api/games"
-			data-filter-control="true"
-			data-sort-name="TimeStarted"
-			data-sort-order="desc"
-			data-show-refresh="true"
-			data-toolbar="#table-toolbar"
-			data-cache="false"
-			{{/* data-toggle="table" */}}
-			data-id-field="ID"
-			data-pagination="true"
-			data-page-size="50"
-			data-page-number="1"
-			data-pagination-loop="false"
-			data-show-extended-pagination="true"
-			data-page-list="[10, 15, 25, 35, 50, 100]"
-			data-buttons-prefix="btn btn-sm btn-primary"
-			data-classes="table table-striped table-sm"
-			data-search="true"
-			data-search-on-enter-key="true"
-			data-show-search-button="true"
-			data-side-pagination="server"
-			data-silent-sort="false"
-			{{/* data-search-highlight="true" */}}
-			data-show-search-clear-button="true"
-			data-escape="true"
-			data-show-filter-control-switch="true"
-			data-filter-control-visible="false"
-			{{/* data-show-footer="true" */}}
-			data-sticky-header="true">
+			<table id="table" class="smart-table">
 				<thead>
 					<tr>
-						<th data-rowspan="2" data-halign="center" data-formatter="IDFormatter" data-field="ID">ID</th>
-						<th data-rowspan="2" data-halign="center" data-formatter="TimeFormatter" data-field="TimeStarted">Date / Duration</th>
-						<th data-rowspan="2" data-halign="center" data-formatter="MapNameFormatter" data-field="MapName" data-filter-control="select" data-filter-data="var:MapsSelection">Map</th>
+						<th data-rowspan="1" data-halign="center">ID</th>
+						<th data-rowspan="1" data-halign="center">Date / Duration</th>
+						<th data-rowspan="1" data-halign="center">Map</th>
 						<th data-colspan="3" data-halign="center" data-class="noBottomBorder">Settings</th>
 						<th data-colspan="2" data-halign="center" data-class="noBottomBorder" data-formatter="playersFormatter" data-class="width45" data-filter-control="input">Players</th>
 						<th data-rowspan="2" data-halign="center" data-formatter="detailsBtn"></th>
 					</tr>
 					<tr>
+						<th data-class="hiddenrow" data-formatter="IDFormatter" data-field="ID"></th>
+						<th data-class="hiddenrow" data-formatter="TimeFormatter" data-field="TimeStarted"></th>
+						<th data-class="hiddenrow" data-formatter="MapNameFormatter" data-field="MapName" data-filter-control="select" data-filter-data="var:MapsSelection"></th>
 						<th data-class="hiddenrow" data-field="SettingBase" data-formatter="BaseLevelSettingsFormatter"></th>
 						<th data-class="hiddenrow" data-field="SettingScavs" data-formatter="ScavengersSettingsFormatter"></th>
 						<th data-class="hiddenrow" data-field="SettingAlliance" data-formatter="AlliancesSettingsFormatter"></th>
-						<th data-class="hiddenrow" data-formatter="playersFormatterA"></th>
-						<th data-class="hiddenrow" data-formatter="playersFormatterB"></th>
+						<th data-class="hiddenrow" data-halign="center" data-formatter="playersFormatterA">Won</th>
+						<th data-class="hiddenrow" data-halign="center" data-formatter="playersFormatterB">Lost</th>
 					</tr>
 				</thead>
 			</table>
@@ -83,7 +56,8 @@
 			"{{$v}}": "{{$v}}",{{end}}
 		};
 		$(function() {
-			$('#table').bootstrapTable({
+			$('#table').bootstrapTable(Object.assign(defaultTableOptions, {
+				url: "/api/games",
 				onPageChange: function (number, size) {
 					window.scrollTo({
 						top: 0, left: 0,
@@ -93,7 +67,7 @@
 				formatSearch: function () {
 					return 'Search participants';
 				}
-			});
+			}));
 		})
 		</script>
 	</body>
