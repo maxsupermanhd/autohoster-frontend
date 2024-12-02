@@ -95,8 +95,8 @@ func robotsHandler(w http.ResponseWriter, _ *http.Request) {
 	fmt.Fprint(w, "User-agent: *\nDisallow: /\n\n\n")
 }
 func faviconHandler(w http.ResponseWriter, r *http.Request) {
-	n := time.Now().Add(-24 * time.Hour)
-	if n.Year() != n.Add(48*time.Hour).Year() {
+	n := time.Now().Add(-7 * 24 * time.Hour)
+	if n.Year() != n.Add(14*24*time.Hour).Year() {
 		http.ServeFile(w, r, "./static/favicon-newyear.ico")
 	}
 	http.ServeFile(w, r, "./static/favicon.ico")
