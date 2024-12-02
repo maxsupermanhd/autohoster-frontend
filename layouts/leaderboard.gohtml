@@ -13,6 +13,8 @@
 			<div id="table-toolbar" class="mt-2">
 				<h4>Autohoster Leaderboards</h4>
 			</div>
+			<script>
+			</script>
 			<table class="table">
 				<tbody>
 				{{range $rc, $lb := .leaderboards}}
@@ -85,22 +87,14 @@
 			</div>
 			<noscript>Enable javascript to view table contents<style> yes-script { display:none; } </style></noscript>
 			<yes-script>
-			<table id="table" class="smart-table table-fit" data-pagination="true"></table>
-						{{/*
-						<th data-formatter="rownumberFormatter" data-cell-style="rownumberStyler" data-class="expandme2"></th>
-						<th data-field="Name" data-sortable="true" data-class="width25" data-filter-control="input" data-formatter="nameFormatter">Name</th>
-						<th data-field="Elo2" data-sortable="true" data-sorter="elo2Sorter" data-filter-control="input">Rating</th>
-						<th data-field="Autoplayed" data-sortable="true" data-filter-control="input" data-filter-default=">=10">Played</th>
-						<th data-field="Autolost" data-sortable="true" data-filter-control="input">Lost</th>
-						<th data-field="Autowon" data-sortable="true" data-filter-control="input">Won</th>
-						<th data-sortable="true" data-formatter="winrateFormatter" data-sorter="winrateSorter" data-filter-control="input">Winrate</th>
-						<th data-field="Timeplayed" data-sortable="true" data-formatter="timeplayedFormatter" data-filter-control="input">Time played</th>
-						<th data-field="LastGame" data-sortable="true" data-formatter="lastgameFormatter" data-filter-control="input">Last game</th>
-						<th data-field="Hash" data-sortable="true" data-filter-control="input" data-formatter="hashFormatter">Hash</th>
-						<th data-field="ID" data-sortable="true" data-filter-control="input">ID</th> */}}
+			<table id="table" class="smart-table table-fit"></table>
 			</yes-script>
 		</div>
 		<script>
+		function contextNameFormatter(value, row) {
+			row.Rating.t = {{.category.Variant}};
+			return nameFormatter(value, row);
+		}
 		$(function() {
 			$('#table').bootstrapTable(Object.assign(defaultTableOptions, {
 				sortName: "ID",
@@ -113,32 +107,32 @@
 				}, {
 					field: 'Name',
 					title: 'Name',
-					formatter: 'nameFormatter',
+					formatter: 'contextNameFormatter',
 					class: 'width25',
 					filterControl: 'input',
 					sortable: true
 				}, {
-					field: 'Elo',
+					field: 'Rating.elo',
 					title: 'Elo',
 					filterControl: 'input',
 					sortable: true
 				}, {
-					field: 'Played',
+					field: 'Rating.played',
 					title: 'Played',
 					filterControl: 'input',
 					sortable: true
 				}, {
-					field: 'Won',
+					field: 'Rating.won',
 					title: 'Won',
 					filterControl: 'input',
 					sortable: true
 				}, {
-					field: 'Lost',
+					field: 'Rating.lost',
 					title: 'Lost',
 					filterControl: 'input',
 					sortable: true
 				}, {
-					field: 'TimePlayed',
+					field: 'Rating.timePlayed',
 					title: 'TimePlayed',
 					filterControl: 'input',
 					formatter: 'timeplayedFormatter',

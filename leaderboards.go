@@ -39,19 +39,16 @@ func GetRatingCategory(ctx context.Context, db *pgxpool.Pool, id int) (*RatingCa
 }
 
 type LeaderboardEntry struct {
-	Name       string `db:"display_name"`
-	Account    int
-	Category   int
-	Elo        int
-	Played     int
-	Won        int
-	Lost       int
-	TimePlayed int
+	Name     string `db:"display_name"`
+	Account  int
+	Category int            `json:"-"`
+	Variant  string         `json:"-"`
+	Rating   map[string]any `db:"data"`
 }
 
 func GetLeaderboardTop(ctx context.Context, db *pgxpool.Pool, category int, limit int) ([]*LeaderboardEntry, error) {
 	r := []*LeaderboardEntry{}
-	return r, pgxscan.Select(ctx, db, &r, `SELECT * FROM leaderboard WHERE category = $1 LIMIT $2`, category, limit)
+	return r, pgxscan.Select(ctx, db, &r, `SELECT * FROM leaderboard2 WHERE category = $1 ORDER BY (data->'elo')::int DESC LIMIT $2`, category, limit)
 }
 
 func LeaderboardsHandler(w http.ResponseWriter, r *http.Request) {
@@ -66,6 +63,9 @@ func LeaderboardsHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": err.Error()})
 			return
+		}
+		for _, ll := range l {
+			ll.Rating["t"] = c.Variant
 		}
 		lb[c] = l
 	}
@@ -101,21 +101,22 @@ func APIgetLeaderboard(_ http.ResponseWriter, r *http.Request) (int, any) {
 		return 500, err
 	}
 	return genericViewRequest[LeaderboardEntry](r, genericRequestParams{
-		tableName:               "leaderboard",
+		tableName:               "leaderboard2",
 		limitClamp:              500,
 		sortDefaultOrder:        "desc",
-		sortDefaultColumn:       "elo",
-		sortColumns:             []string{"display_name", "account", "category", "elo", "played", "won", "lost", "time_played"},
-		filterColumnsFull:       []string{"account", "category", "elo", "played", "won", "lost", "time_played"},
+		sortDefaultColumn:       "(data->'elo')::int",
+		sortColumns:             []string{"display_name", "category", "(data->'elo')::int", "(data->'played')::int", "(data->'won')::int", "(data->'lost')::int", "(data->'time_played')::int"},
+		filterColumnsFull:       []string{"category", "(data->'elo')::int", "(data->'played')::int", "(data->'won')::int", "(data->'lost')::int", "(data->'time_played')::int"},
 		filterColumnsStartsWith: []string{"display_name"},
 		searchColumn:            "display_name",
 		searchSimilarity:        0.3,
-		addWhereCase:            fmt.Sprintf("category = %d AND played > 0", category),
+		addWhereCase:            fmt.Sprintf("category = %d AND (data->'played')::int > 0", category),
 		columnMappings: map[string]string{
-			"Won":  "won",
-			"Lost": "lost",
-			"Elo":  "elo",
-			"Name": "display_name",
+			"Won":    "(data->'won')::int",
+			"Lost":   "(data->'lost')::int",
+			"Elo":    "(data->'elo')::int",
+			"Played": "(data->'played')::int",
+			"Name":   "display_name",
 		},
 	})
 }

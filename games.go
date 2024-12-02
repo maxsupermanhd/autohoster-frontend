@@ -19,16 +19,6 @@ import (
 	"github.com/jackc/pgx/v4"
 )
 
-type PlayerRating struct {
-	Elo        int
-	Played     int
-	Won        int
-	Lost       int
-	TimePlayed int
-	Account    int
-	Category   int
-}
-
 type Player struct {
 	Position       int
 	Name           string
@@ -37,7 +27,7 @@ type Player struct {
 	Identity       int
 	IdentityPubKey string
 	Usertype       string
-	Rating         *PlayerRating
+	Rating         map[string]any
 	Account        int
 	Props          map[string]any
 }
@@ -99,7 +89,9 @@ func DbGameDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		'IdentityPubKey', encode(i.pkey, 'hex'),
 		'Account', a.id,
 		'Name', coalesce(a.display_name, 'noname'),
-		'Rating', (select r from rating as r where r.category = g.display_category and r.account = i.account),
+		'Rating', json_build_object(
+			'Variant', (select variant from rating_categories where id = g.display_category),
+		)::jsonb || (select r.data from rating as r where r.category = g.display_category and r.account = i.account),
 		'Props', p.props
 	))::jsonb) as players
 from games as g
@@ -322,8 +314,9 @@ join identities as i on i.id = p.identity
 	from players as p
 	join identities as i on i.id = p.identity
 	left join accounts as a on a.id = i.account
-	` + whereplayerscase + `
-)
+	` + whereplayerscase + `),
+	rBotAutoDumbWon as (select count(*) from players where identity = 12071 and usertype = 'winner'),
+	rBotAutoDumbPlayed as (select count(*) from players where identity = 12071)
 select
 	g.id, g.version, g.time_started, g.time_ended, g.game_time,
 	g.setting_scavs, g.setting_alliance, g.setting_power, g.setting_base,
@@ -338,7 +331,12 @@ select
 		'IdentityPubKey', encode(i.pkey, 'hex'),
 		'Account', a.id,
 		'Name', coalesce(a.display_name, 'noname'),
-		'Rating', (select r from rating as r where r.category = g.display_category and r.account = i.account)
+		'Rating', CASE  WHEN i.id = 12071 THEN json_build_object(
+							't', 'botwl',
+							'won', (select * from rBotAutoDumbWon),
+							'played', (select * from rBotAutoDumbPlayed))
+						ELSE (select to_json(r) from rating as r where r.category = g.display_category and r.account = i.account)
+				  END
 	)) as players
 from games as g
 join players as p on p.game = g.id

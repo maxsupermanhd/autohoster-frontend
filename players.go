@@ -36,7 +36,7 @@ func PlayersHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	var identID int
 	var name *string
-	var identPubKey string
+	var identPubKey *string
 	var identHash string
 	err = dbpool.QueryRow(r.Context(), `select i.id, a.display_name, encode(i.pkey, 'hex'), i.hash from identities as i left join accounts as a on a.id = i.account where i.pkey = $1 or i.hash ^@ encode($1, 'hex')`, identSpecifier).Scan(&identID, &name, &identPubKey, &identHash)
 	if err != nil {
@@ -52,6 +52,7 @@ func PlayersHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	basicLayoutLookupRespond("player", w, r, map[string]any{
 		"Player": map[string]any{
+			"ID":             identID,
 			"Name":           name,
 			"IdentityPubKey": identPubKey,
 			"IdentityHash":   identHash,

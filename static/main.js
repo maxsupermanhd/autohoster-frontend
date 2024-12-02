@@ -1,80 +1,108 @@
 function nameFormatter(value, row) {
-	let ret = `<div align="left" style="height:45px;">
-<table cellspacing="0" cellpadding="0" style="margin: 0">
-<tbody><tr><td class="rank-star">`;
-	let Played = row.Played;
-	let Won = row.Won;
-	let Lost = row.Lost;
-	let Elo = row.Elo;
-	let EloDiff = row.EloDiff;
 	let DisplayName = row.DisplayName !== undefined ? row.DisplayName : row.Name;
-	let Account = row.Account !== undefined ? row.Account : row.AccountID;
-	let Identity = row.Identity !== undefined ? row.Identity : row.Identity;
-	let IdentityPubKey = row.IdentityPubKey;
-	let url = "";
-	if (IdentityPubKey !== undefined) {
-		url = `href="/players/${IdentityPubKey}"`;
-	}
 	if(DisplayName !== undefined && DisplayName.length > 23) {
 		DisplayName = DisplayName.slice(0, 20) + '...';
 	}
-	if(Played > 4) {
-		if(Elo > 1800) {
-			ret += `<object class="rank rank-starGold"></object>`;
-		} else if(Elo > 1550) {
-			ret += `<object class="rank rank-starSilver"></object>`;
-		} else if(Elo > 1400) {
-			ret += `<object class="rank rank-starBronze"></object>`;
+	let Account = row.Account !== undefined ? row.Account : row.AccountID;
+	let Identity = row.Identity !== undefined ? row.Identity : row.Identity;
+	let IdentityPubKey = row.IdentityPubKey;
+	let Rating = row.Rating;
+	let rr = {top: "", middle: "", bottom: "", customIcon: "",
+		medal: `<object class="rank rank-pacifier"></object>`,
+		text: `<small class="text-muted class="text-nowrap"">not registered</small>`,
+	};
+	if(Account !== undefined && Account > 0) {
+		try {
+			rr = nameFormatterRating(rr, Rating);
+		} catch (e) {
+			rr.text = e;
 		}
 	}
-	ret += `</td><td rowspan="3" class="rank-medal">`;
-	if(Played > 4) {
-		if(Lost == 0) {
-		} else if(Won >= 24 && Won/Lost > 6) {
-			ret += `<object class="rank rank-medalGold"></object>`;
-		} else if(Won >= 12 && Won/Lost > 4) {
-			ret += `<object class="rank rank-medalDouble"></object>`;
-		} else if(Won >= 6 && Won/Lost > 3) {
-			ret += `<object class="rank rank-medalSilver"></object>`;
-		}
+	let ret = `<div align="left" style="height:45px;">
+	<table cellspacing="0" cellpadding="0" style="margin: 0">
+	<tbody><tr>`;
+	if(rr.customIcon == "") {
+		ret += `<td class="rank-star">`;
+		ret += rr.top;
+		ret += `</td><td rowspan="3" class="rank-medal">`;
+		ret += rr.medal;
+		ret += `</td><td rowspan="3" class="rank-link">`;
+		let dn = document.createElement('text')
+		dn.appendChild(document.createTextNode(DisplayName))
+		ret += `<a ${IdentityPubKey !== undefined ? "href=\"/players/"+IdentityPubKey+"\"" : ""} class="text-nowrap">${dn.outerHTML}</a><br>`;
+		ret += rr.text;
+		ret += `</td></tr><tr><td class="rank-star">`;
+		ret += rr.middle;
+		ret += `</td></tr><tr><td class="rank-star">`;
+		ret += rr.bottom;
+		ret += `</td>`;
 	} else {
-		ret += `<object class="rank rank-pacifier"></object>`;
+		ret += `<td>`;
+		ret += rr.customIcon;
+		ret += `</td><td class="rank-link">`;
+		let dn = document.createElement('text')
+		dn.appendChild(document.createTextNode(DisplayName))
+		ret += `<a ${IdentityPubKey !== undefined ? "href=\"/players/"+IdentityPubKey+"\"" : ""} class="text-nowrap">${dn.outerHTML}</a><br>`;
+		ret += rr.text;
+		ret += `</td></tr>`;
 	}
-	ret += `</td><td rowspan="3" class="rank-link">`;
-	let dn = document.createElement('text')
-	dn.appendChild(document.createTextNode(DisplayName))
-	ret += `<a ${url} class="text-nowrap">${dn.outerHTML}</a>`;
-	if(Account <= 0) {
-		ret += '<br><small class="text-muted class="text-nowrap"">not registered</small>';
+	
+	ret += `</tr></tbody></table></div>`;
+	return ret;
+}
+function nameFormatterRating(dret, r) {
+	let ret = dret;
+	if(r == null) {
+		ret.text = `<small class="text-secondary class="text-nowrap"">not rated</small>`;
+		ret.medal = ``;
+		return ret
+	}
+	if(r.t == "elo") {
+		if(r.played > 4) {
+			ret.medal = ``;
+			if(r.lost == 0) {
+			} else if(r.won >= 24 && r.won/r.lost > 6) {
+				ret.medal = `<object class="rank rank-medalGold"></object>`;
+			} else if(r.won >= 12 && r.won/r.lost > 4) {
+				ret.medal = `<object class="rank rank-medalDouble"></object>`;
+			} else if(r.won >= 6 && r.won/r.lost > 3) {
+				ret.medal = `<object class="rank rank-medalSilver"></object>`;
+			}
+		} else {
+			ret.medal = `<object class="rank rank-pacifier"></object>`;
+		}
+		if(r.played > 4) {
+			if(r.elo > 1800) {
+				ret.top = `<object class="rank rank-starGold"></object>`;
+			} else if(r.elo > 1550) {
+				ret.top = `<object class="rank rank-starSilver"></object>`;
+			} else if(r.elo > 1400) {
+				ret.top = `<object class="rank rank-starBronze"></object>`;
+			}
+		}
+		if(r.played > 60) {
+			ret.middle = `<object class="rank rank-starGold"></object>`;
+		} else if(r.played > 30) {
+			ret.middle = `<object class="rank rank-starSilver"></object>`;
+		} else if(r.played > 10) {
+			ret.middle = `<object class="rank rank-starBronze"></object>`;
+		}
+		if(r.played > 4) {
+			if(r.won > 60) {
+				ret.bottom = `<object class="rank rank-starGold"></object>`;
+			} else if(r.won > 30) {
+				ret.bottom = `<object class="rank rank-starSilver"></object>`;
+			} else if(r.won > 10) {
+				ret.bottom = `<object class="rank rank-starBronze"></object>`;
+			}
+		}
+		ret.text = `${r.elo}`;
+	} else if(r.t == "botwl") {
+		ret.customIcon = `<img src="/static/favicon.ico" width="27px">`;
+		ret.text = `${r.played} played ${r.won} wins`;
 	} else {
-		ret += `<br>${Elo}`;
+		ret.text = `?rating category`;
 	}
-	if(EloDiff != undefined && EloDiff != 0) {
-		ret += "&nbsp;";
-		if(EloDiff >= 1) {
-			ret += "+";
-		}
-		ret += EloDiff;
-	}
-	ret += `</td></tr><tr><td class="rank-star">`;
-	if(Played > 60) {
-		ret += `<object class="rank rank-starGold"></object>`;
-	} else if(Played > 30) {
-		ret += `<object class="rank rank-starSilver"></object>`;
-	} else if(Played > 10) {
-		ret += `<object class="rank rank-starBronze"></object>`;
-	}
-	ret += `</td></tr><tr><td class="rank-star">`;
-	if(Played > 4) {
-		if(Won > 60) {
-			ret += `<object class="rank rank-starGold"></object>`;
-		} else if(Won > 30) {
-			ret += `<object class="rank rank-starSilver"></object>`;
-		} else if(Won > 10) {
-			ret += `<object class="rank rank-starBronze"></object>`;
-		}
-	}
-	ret += `</td></tr></tbody></table></div>`;
 	return ret;
 }
 
