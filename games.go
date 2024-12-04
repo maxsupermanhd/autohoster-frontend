@@ -75,7 +75,10 @@ func DbGameDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Invalid id: " + err.Error()})
 		return
 	}
-	req := `select
+	req := `with
+	rBotAutoDumbWon as (select count(*) from players where identity = 12071 and usertype = 'winner'),
+	rBotAutoDumbPlayed as (select count(*) from players where identity = 12071)
+select
 	g.id, g.version, g.instance, g.time_started, g.time_ended, g.game_time,
 	g.setting_scavs, g.setting_alliance, g.setting_power, g.setting_base,
 	g.map_name, g.map_hash, g.mods, g.deleted, g.hidden, g.calculated, g.debug_triggered,
@@ -89,9 +92,12 @@ func DbGameDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		'IdentityPubKey', encode(i.pkey, 'hex'),
 		'Account', a.id,
 		'Name', coalesce(a.display_name, 'noname'),
-		'Rating', json_build_object(
-			'Variant', (select variant from rating_categories where id = g.display_category),
-		)::jsonb || (select r.data from rating as r where r.category = g.display_category and r.account = i.account),
+		'Rating', CASE  WHEN i.id = 12071 THEN json_build_object(
+							't', 'botwl',
+							'won', (select * from rBotAutoDumbWon),
+							'played', (select * from rBotAutoDumbPlayed))
+						ELSE (select to_json(r) from rating as r where r.category = g.display_category and r.account = i.account)
+				  END,
 		'Props', p.props
 	))::jsonb) as players
 from games as g
