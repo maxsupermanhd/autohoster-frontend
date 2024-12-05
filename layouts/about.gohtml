@@ -79,9 +79,9 @@
 			{{if gt (len $queueDef.Maps) 0}}
 			<li><b>{{$queueName}} ({{$queueDef.RoomName}}):</b>
 				{{range $mapName, $mapHash := $queueDef.Maps}}
-				<a href="https://maps.wz2100.net/#/map/hash/{{$mapName}}">{{$mapHash}}</a>
+				<a href="https://maps.wz2100.net/#/map/hash/{{$mapHash}}">{{$mapName}}</a>
 				{{end}}
-			<li>
+			</li>
 			{{end}}
 			{{end}}
 		</ul>
