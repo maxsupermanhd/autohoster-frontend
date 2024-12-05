@@ -75,10 +75,10 @@
 		<p>In order to not leave empty lobby and provide playground for people who can not host their own rooms
 		Autohoster keeps one random map from each list in lobby:<br></p>
 		<ul>
-			{{range $queueName, $queueMaps := .queues}}
-			{{if gt (len $queueMaps) 0}}
-			<li><b>1x1 queue for everyone:</b>
-				{{range $mapName, $mapHash := $queueMaps}}
+			{{range $queueName, $queueDef := .queues}}
+			{{if gt (len $queueDef.maps) 0}}
+			<li><b>{{$queueName}} (room name {{$queueDef.roomName}}):</b>
+				{{range $mapName, $mapHash := $queueDef.maps}}
 				<a href="https://maps.wz2100.net/#/map/hash/{{$mapName}}">{{$mapHash}}</a>
 				{{end}}
 			<li>
