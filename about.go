@@ -11,8 +11,8 @@ import (
 )
 
 type backendConfiguredQueue struct {
-	roomName string
-	maps     map[string]string
+	RoomName string
+	Maps     map[string]string
 }
 
 func aboutHandler(w http.ResponseWriter, r *http.Request) {
@@ -72,8 +72,8 @@ func fetchBackendQueues() (ret map[string]backendConfiguredQueue) {
 			m[mn] = mh
 		}
 		ret[qdn] = backendConfiguredQueue{
-			roomName: qrn,
-			maps:     m,
+			RoomName: qrn,
+			Maps:     m,
 		}
 	}
 	return

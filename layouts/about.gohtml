@@ -76,9 +76,9 @@
 		Autohoster keeps one random map from each list in lobby:<br></p>
 		<ul>
 			{{range $queueName, $queueDef := .queues}}
-			{{if gt (len $queueDef.maps) 0}}
-			<li><b>{{$queueName}} (room name {{$queueDef.roomName}}):</b>
-				{{range $mapName, $mapHash := $queueDef.maps}}
+			{{if gt (len $queueDef.Maps) 0}}
+			<li><b>{{$queueName}} ({{$queueDef.RoomName}}):</b>
+				{{range $mapName, $mapHash := $queueDef.Maps}}
 				<a href="https://maps.wz2100.net/#/map/hash/{{$mapName}}">{{$mapHash}}</a>
 				{{end}}
 			<li>
