@@ -173,18 +173,18 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		numUsername := 0
-		numUsernameErr := dbpool.QueryRow(r.Context(), "SELECT COUNT(*) FROM accounts WHERE username = $1", requname).Scan(&numUsername)
+		numUsernameErr := dbpool.QueryRow(r.Context(), "SELECT COUNT(*) FROM accounts WHERE lower(username) = lower($1)", requname).Scan(&numUsername)
 		if numUsernameErr != nil {
 			dberr(numUsernameErr)
 			return
 		}
 		if numUsername != 0 {
-			basicLayoutLookupRespond("register", w, r, map[string]any{"RegisterErrorMsg": "Username is already taken!", "LastAttempt": la})
+			basicLayoutLookupRespond("register", w, r, map[string]any{"RegisterErrorMsg": "Username is already taken! (case insensitive)", "LastAttempt": la})
 			return
 		}
 
 		numEmail := 0
-		numEmailErr := dbpool.QueryRow(r.Context(), "SELECT COUNT(*) FROM accounts WHERE email = $1", reqemail).Scan(&numEmail)
+		numEmailErr := dbpool.QueryRow(r.Context(), "SELECT COUNT(*) FROM accounts WHERE lower(email) = lower($1)", reqemail).Scan(&numEmail)
 		if numEmailErr != nil {
 			dberr(numEmailErr)
 			return
