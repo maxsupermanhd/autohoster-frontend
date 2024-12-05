@@ -279,7 +279,7 @@ func main() {
 	router.HandleFunc("/", indexHandler)
 
 	router.HandleFunc("/legal", basicLayoutHandler("legal"))
-	router.HandleFunc("/about", basicLayoutHandler("about"))
+	router.HandleFunc("/about", aboutHandler)
 	router.HandleFunc("/rules", basicLayoutHandler("rules"))
 	router.HandleFunc("/rules/ru", basicLayoutHandler("rulesRU"))
 	router.HandleFunc("/login", loginHandler)
