@@ -2,12 +2,14 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
+	"runtime/debug"
 	"time"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 )
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
@@ -74,7 +76,7 @@ where g.time_started > now()-$1::interval`, timeInterval).Scan(&uniqPlayers)
 
 	}, func() error {
 		var pc, gc int
-		_, err := dbpool.QueryFunc(r.Context(), `with gms as (select
+		rows, err := dbpool.Query(r.Context(), `with gms as (select
 			g.id, count(p)
 		from games as g
 		join players as p on p.game = g.id
@@ -85,17 +87,21 @@ where g.time_started > now()-$1::interval`, timeInterval).Scan(&uniqPlayers)
 		select
 			count, count(id)
 		from gms
-		group by count`,
-			[]any{timeInterval}, []any{&pc, &gc}, func(_ pgx.QueryFuncRow) error {
-				gamesPlayedByPlayercount[pc] = gc
-				return nil
-			})
+		group by count`, timeInterval)
+		if err != nil {
+			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+			return err
+		}
+		_, err = pgx.ForEachRow(rows, []any{&pc, &gc}, func() error {
+			gamesPlayedByPlayercount[pc] = gc
+			return nil
+		})
 		return err
 	}, func() error {
 		var date string
 		var count, average int
 		var nbcount, nbaverage int
-		_, err := dbpool.QueryFunc(r.Context(), `SELECT
+		rows, err := dbpool.Query(r.Context(), `SELECT
 	to_char(date_trunc('day', g.time_started), 'YYYY-MM-DD') as d,
 	count(g.time_started) as c,
 	round(avg(count(g.time_started)) over(order by date_trunc('day', g.time_started) rows between 6 preceding and current row)),
@@ -105,16 +111,16 @@ FROM games as g
 LEFT JOIN games_rating_categories as gc on gc.game = g.id
 WHERE g.time_started > now() - '1 year 7 days'::interval
 GROUP BY date_trunc('day', g.time_started)
-ORDER BY date_trunc('day', g.time_started)`,
-			[]any{}, []any{&date, &count, &average, &nbcount, &nbaverage}, func(_ pgx.QueryFuncRow) error {
-				gamesGraph[date] = count
-				gamesGraphAvg[date] = average
-				gamesGraphRated[date] = 0
-				gamesGraphRatedAvg[date] = 0
-				gamesGraphNonBot[date] = nbcount
-				gamesGraphNonBotAvg[date] = nbaverage
-				return nil
-			})
+ORDER BY date_trunc('day', g.time_started)`)
+		pgx.ForEachRow(rows, []any{&date, &count, &average, &nbcount, &nbaverage}, func() error {
+			gamesGraph[date] = count
+			gamesGraphAvg[date] = average
+			gamesGraphRated[date] = 0
+			gamesGraphRatedAvg[date] = 0
+			gamesGraphNonBot[date] = nbcount
+			gamesGraphNonBotAvg[date] = nbaverage
+			return nil
+		})
 		return err
 	})
 

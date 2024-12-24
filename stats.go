@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 )
 
 func statsHandler(w http.ResponseWriter, r *http.Request) {

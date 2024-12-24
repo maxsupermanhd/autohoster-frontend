@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/georgysavva/scany/pgxscan"
+	"github.com/georgysavva/scany/v2/pgxscan"
 )
 
 type genericRequestParams struct {

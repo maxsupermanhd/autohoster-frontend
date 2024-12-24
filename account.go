@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"runtime/debug"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 )
 
 const (
@@ -207,7 +207,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		if tag.RowsAffected() != 1 {
 			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-			modSendWebhook(fmt.Sprintf("%s\n%s", string(tag), string(debug.Stack())))
+			modSendWebhook(fmt.Sprintf("%s\n%s", tag.String(), string(debug.Stack())))
 			return
 		}
 		basicLayoutLookupRespond("register", w, r, map[string]any{"SuccessRegister": true})

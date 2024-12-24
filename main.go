@@ -19,7 +19,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/maxsupermanhd/lac"
 	"github.com/natefinch/lumberjack"
 )
@@ -244,7 +244,7 @@ func main() {
 	}
 
 	log.Println("Connecting to database")
-	dbpool, err = pgxpool.Connect(context.Background(), cfg.GetDString("", "databaseConnString"))
+	dbpool, err = pgxpool.New(context.Background(), cfg.GetDString("", "databaseConnString"))
 	if err != nil {
 		log.Fatal(err)
 	}

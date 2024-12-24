@@ -107,7 +107,7 @@ func DiscordCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if tag.RowsAffected() != 1 {
 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-		modSendWebhook(fmt.Sprintf("%s\n%s", string(tag), string(debug.Stack())))
+		modSendWebhook(fmt.Sprintf("%s\n%s", tag.String(), string(debug.Stack())))
 		return
 	}
 	log.Println("Got token")

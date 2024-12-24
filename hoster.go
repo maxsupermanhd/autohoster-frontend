@@ -14,9 +14,9 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/georgysavva/scany/pgxscan"
-	"github.com/jackc/pgx/v4"
-	_ "github.com/jackc/pgx/v4/pgxpool"
+	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/jackc/pgx/v5"
+	_ "github.com/jackc/pgx/v5/pgxpool"
 	mapsdatabase "github.com/maxsupermanhd/go-wz/maps-database"
 )
 

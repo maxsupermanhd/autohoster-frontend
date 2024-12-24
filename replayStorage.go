@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/DataDog/zstd"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 )
 
 var errReplayNotFound = errors.New("replay not found")

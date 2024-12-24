@@ -1,11 +1,14 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	"log"
 	"net/http"
+	"runtime/debug"
 	"time"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 )
 
 func bansHandler(w http.ResponseWriter, r *http.Request) {
@@ -38,17 +41,24 @@ func bansHandler(w http.ResponseWriter, r *http.Request) {
 		forbidsJoining  bool
 	)
 
-	_, err := dbpool.QueryFunc(r.Context(),
+	rows, err := dbpool.Query(r.Context(),
 		`select
 	bans.id, accounts.id, accounts.display_name, identities.id, coalesce(encode(identities.pkey, 'hex'), identities.hash),
 	time_issued, time_expires, reason, forbids_chatting, forbids_playing, forbids_joining
 from bans
 left join identities on bans.identity = identities.id
 left join accounts on bans.account = accounts.id
-order by bans.id desc;`, []any{},
-		[]any{&banid, &acc, &accName, &ident, &identKey,
-			&whenbanned, &whenexpires, &reason, &forbidsChatting, &forbidsPlaying, &forbidsJoining},
-		func(_ pgx.QueryFuncRow) error {
+order by bans.id desc;`)
+	if err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
+			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+			return
+		}
+	}
+	pgx.ForEachRow(rows, []any{&banid, &acc, &accName, &ident, &identKey,
+		&whenbanned, &whenexpires, &reason, &forbidsChatting, &forbidsPlaying, &forbidsJoining},
+		func() error {
 			v := viewBan{
 				ID:          banid,
 				Identity:    ident,
