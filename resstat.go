@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"runtime/debug"
 	"sort"
 	"strconv"
 
@@ -60,9 +62,10 @@ func resstatHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var versions []string
-	derr := dbpool.QueryRow(context.Background(), `SELECT array_agg(DISTINCT COALESCE(version, 'any')) FROM games;`).Scan(&versions)
-	if derr != nil {
-		log.Print(derr.Error())
+	err := dbpool.QueryRow(context.Background(), `SELECT array_agg(DISTINCT COALESCE(version, 'any')) FROM games;`).Scan(&versions)
+	if err != nil {
+		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 	sqbase := 1
@@ -98,20 +101,21 @@ func resstatHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	var rows pgx.Rows
 	if sqver == "any" {
-		rows, derr = dbpool.Query(context.Background(), `
+		rows, err = dbpool.Query(context.Background(), `
 		SELECT
 		games.id, players, research_log
 		FROM games
 		WHERE research_log is not null AND baselevel = $1 AND calculated = true AND hidden = false AND deleted = false AND alliancetype = 3 AND id > $2`, sqbase, ming)
 	} else {
-		rows, derr = dbpool.Query(context.Background(), `
+		rows, err = dbpool.Query(context.Background(), `
 		SELECT
 		games.id, players, research_log
 		FROM games
 		WHERE research_log is not null AND baselevel = $1 AND calculated = true AND hidden = false AND deleted = false AND alliancetype = 3 AND version = $2 AND id > $3`, sqbase, sqver, ming)
 	}
-	if derr != nil {
-		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Database query error: " + derr.Error()})
+	if err != nil {
+		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 	defer rows.Close()
@@ -144,12 +148,14 @@ func resstatHandler(w http.ResponseWriter, r *http.Request) {
 		var reslogj string
 		err := rows.Scan(&gid, &players, &reslogj)
 		if err != nil {
-			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Database scan error: " + err.Error()})
+			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return
 		}
 		var reslog []research
 		if err := json.Unmarshal([]byte(reslogj), &reslog); err != nil {
-			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Json parse error: " + err.Error()})
+			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return
 		}
 		for _, e := range reslog {
@@ -203,18 +209,18 @@ func resstatHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	for i, j := range plid {
 		var pl GamePlayer
-		derr := dbpool.QueryRow(context.Background(), `
+		err := dbpool.QueryRow(context.Background(), `
 					SELECT
 						to_json(players)::jsonb || json_build_object('userid', coalesce((SELECT id AS userid FROM accounts WHERE players.id = accounts.wzprofile2), -1))::jsonb
 					FROM players
 					WHERE players.id = $1`, i).Scan(&pl)
-		if derr != nil {
-			if derr == pgx.ErrNoRows {
+		if err != nil {
+			if err == pgx.ErrNoRows {
 				log.Print("Player ", i, " not found")
 				continue
 			}
-			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Database scan error: " + derr.Error()})
-			log.Print(derr.Error())
+			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return
 		}
 		for _, v := range j {

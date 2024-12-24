@@ -3,10 +3,12 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	_ "fmt"
 	"io"
 	"log"
 	"net/http"
+	"runtime/debug"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
@@ -97,13 +99,15 @@ func DiscordCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": 1, "msg": "Retreived invalid token"})
 		return
 	}
-	tag, derr := dbpool.Exec(r.Context(), "UPDATE accounts SET discord_token = $1, discord_refresh = $2, discord_refresh_date = $3 WHERE username = $4", token.AccessToken, token.RefreshToken, token.Expiry, sessionManager.Get(r.Context(), "User.Username"))
-	if derr != nil {
-		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": 1, "msg": "Database call error: " + derr.Error()})
+	tag, err := dbpool.Exec(r.Context(), "UPDATE accounts SET discord_token = $1, discord_refresh = $2, discord_refresh_date = $3 WHERE username = $4", token.AccessToken, token.RefreshToken, token.Expiry, sessionManager.Get(r.Context(), "User.Username"))
+	if err != nil {
+		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 	if tag.RowsAffected() != 1 {
-		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": 1, "msg": "Database insert error, rows affected " + string(tag)})
+		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+		modSendWebhook(fmt.Sprintf("%s\n%s", string(tag), string(debug.Stack())))
 		return
 	}
 	log.Println("Got token")

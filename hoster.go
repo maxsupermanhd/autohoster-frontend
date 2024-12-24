@@ -107,7 +107,8 @@ from accounts as a
 join identities as i on i.account = a.id
 where (a.id = any($1) or a.superadmin = true) and i.pkey is not null;`, r.Form["additionalAdmin"]).Scan(&adminHashes)
 	if err != nil {
-		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Database query error: " + err.Error()})
+		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 
@@ -166,7 +167,8 @@ where (a.id = any($1) or a.superadmin = true) and i.pkey is not null;`, r.Form["
 
 	hosterResponse, err := RequestHosting(toSendPreset)
 	if err != nil {
-		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Hoster returned error: " + err.Error()})
+		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 
@@ -193,7 +195,8 @@ join identities as i on i.account = a.id
 where a.allow_host_request = true and i.pkey is not null
 order by a.id`)
 	if err != nil {
-		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Database query error: " + err.Error()})
+		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 	whitelistedMaps, ok := cfg.GetMapStringAny("whitelistedMaps")
@@ -218,7 +221,8 @@ func hostRequestAccountPassesChecks(w http.ResponseWriter, r *http.Request) bool
 			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msg": "Unauthorized?!"})
 			sessionManager.Destroy(r.Context())
 		} else {
-			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Database query error: " + err.Error()})
+			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		}
 		return false
 	}
@@ -236,7 +240,8 @@ func hostRequestAccountPassesChecks(w http.ResponseWriter, r *http.Request) bool
 			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msg": "Unauthorized?!"})
 			sessionManager.Destroy(r.Context())
 		} else {
-			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Database query error: " + err.Error()})
+			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		}
 		return false
 	}
@@ -351,7 +356,8 @@ func wzlinkHandler(w http.ResponseWriter, r *http.Request) {
 	}{}
 	err := pgxscan.Select(r.Context(), dbpool, &idt, `select id, name, pkey, hash, account from identities where account = $1`, sessionGetUserID(r))
 	if err != nil && err != pgx.ErrNoRows {
-		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Database error: " + err.Error()})
+		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 	basicLayoutLookupRespond("wzlink", w, r, map[string]any{

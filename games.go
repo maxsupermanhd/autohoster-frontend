@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"runtime/debug"
 	"slices"
 	_ "sort"
 	"strconv"
@@ -114,12 +115,14 @@ group by g.id`
 		&g.MapName, &g.MapHash, &g.Mods, &g.Deleted, &g.Hidden, &g.Calculated, &g.DebugTriggered, &g.DisplayCategory,
 		&playersJSON)
 	if err != nil {
-		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Database error: " + err.Error()})
+		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 	err = json.Unmarshal([]byte(playersJSON), &g.Players)
 	if err != nil {
-		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Json unmarshal error: " + err.Error()})
+		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 	g.ReplayFound = checkReplayExistsInStorage(r.Context(), g.ID)
@@ -133,14 +136,16 @@ group by g.id`
 	}
 	previewImage, err := getMapPreviewWithColors(g.MapHash, slotColors)
 	if err != nil {
-		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Preview rendering error: " + err.Error()})
+		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 
 	previewImageBuf := bytes.NewBufferString("")
 	err = png.Encode(previewImageBuf, previewImage)
 	if err != nil {
-		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Encoding png err: " + err.Error()})
+		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 
@@ -175,8 +180,9 @@ func DbGamesHandler(w http.ResponseWriter, r *http.Request) {
 	}()
 	for !(dmapspresent && dtotalpresent) {
 		select {
-		case derr := <-errc:
-			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Database error: " + derr.Error()})
+		case err := <-errc:
+			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return
 		case dmaps = <-dmapsc:
 			dmapspresent = true
@@ -392,11 +398,12 @@ group by g.id
 	}()
 	for !(gpresent && totalspresent && totalsNoFilterpresent) {
 		select {
-		case derr := <-echan:
-			if derr == pgx.ErrNoRows {
+		case err := <-echan:
+			if err == pgx.ErrNoRows {
 				return 200, []byte(`{"total": 0, "totalNotFiltered": 0, "rows": []}`)
 			}
-			return 500, derr
+			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+			return 500, err
 		case gms = <-growsc:
 			gpresent = true
 		case totals = <-totalsc:

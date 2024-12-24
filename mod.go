@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"runtime/debug"
 	"strconv"
 	"time"
 
@@ -129,13 +130,15 @@ func modAccountsPOST(w http.ResponseWriter, r *http.Request) {
 		respondWithCodeAndPlaintext(w, 400, "Name is missing")
 		return
 	}
-	tag, derr := dbpool.Exec(context.Background(), "UPDATE accounts SET "+r.FormValue("param")+" = $1 WHERE username = $2", r.FormValue("val"), r.FormValue("name"))
-	if derr != nil {
-		logRespondWithCodeAndPlaintext(w, 500, "Database query error: "+derr.Error())
+	tag, err := dbpool.Exec(context.Background(), "UPDATE accounts SET "+r.FormValue("param")+" = $1 WHERE username = $2", r.FormValue("val"), r.FormValue("name"))
+	if err != nil {
+		logRespondWithCodeAndPlaintext(w, 500, "Database query error: "+err.Error())
+		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 	if !tag.Update() || tag.RowsAffected() != 1 {
 		logRespondWithCodeAndPlaintext(w, 500, "Sus result "+tag.String())
+		modSendWebhook(fmt.Sprintf("%s\n%s", tag.String(), string(debug.Stack())))
 		return
 	}
 	w.WriteHeader(200)

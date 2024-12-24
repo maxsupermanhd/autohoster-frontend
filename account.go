@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"runtime/debug"
 
 	"github.com/jackc/pgx/v4"
 )
@@ -30,14 +31,14 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		var iddb int
 		var terminated bool
 		var username string
-		derr := dbpool.QueryRow(r.Context(), "SELECT username, password, id, terminated FROM accounts WHERE username = $1 or email = $1", r.PostFormValue("username")).Scan(&username, &passdb, &iddb, &terminated)
-		if derr != nil {
-			if derr == pgx.ErrNoRows {
+		err := dbpool.QueryRow(r.Context(), "SELECT username, password, id, terminated FROM accounts WHERE username = $1 or email = $1", r.PostFormValue("username")).Scan(&username, &passdb, &iddb, &terminated)
+		if err != nil {
+			if err == pgx.ErrNoRows {
 				basicLayoutLookupRespond(templateLogin, w, r, map[string]any{"LoginError": true})
 				log.Printf("No such user")
 			} else {
-				basicLayoutLookupRespond(templateLogin, w, r, map[string]any{"LoginError": true, "LoginDetailedError": "Database query error: " + derr.Error()})
-				log.Printf("DB err: " + derr.Error())
+				basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+				modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			}
 			return
 		}
@@ -168,14 +169,11 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 
 		log.Printf("Register attempt: [%s] [%s]", requname, reqemail)
 
-		dberr := func(e error) {
-			basicLayoutLookupRespond("register", w, r, map[string]any{"RegisterErrorMsg": "Database call error: " + e.Error(), "LastAttempt": la})
-		}
-
 		numUsername := 0
-		numUsernameErr := dbpool.QueryRow(r.Context(), "SELECT COUNT(*) FROM accounts WHERE lower(username) = lower($1)", requname).Scan(&numUsername)
-		if numUsernameErr != nil {
-			dberr(numUsernameErr)
+		err = dbpool.QueryRow(r.Context(), "SELECT COUNT(*) FROM accounts WHERE lower(username) = lower($1)", requname).Scan(&numUsername)
+		if err != nil {
+			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return
 		}
 		if numUsername != 0 {
@@ -184,9 +182,10 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		numEmail := 0
-		numEmailErr := dbpool.QueryRow(r.Context(), "SELECT COUNT(*) FROM accounts WHERE lower(email) = lower($1)", reqemail).Scan(&numEmail)
-		if numEmailErr != nil {
-			dberr(numEmailErr)
+		err = dbpool.QueryRow(r.Context(), "SELECT COUNT(*) FROM accounts WHERE lower(email) = lower($1)", reqemail).Scan(&numEmail)
+		if err != nil {
+			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return
 		}
 		if numEmail != 0 {
@@ -200,13 +199,15 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		tag, derr := dbpool.Exec(r.Context(), "INSERT INTO accounts (username, password, email, email_confirm_code) VALUES($1, $2, $3, $4) ON CONFLICT DO NOTHING", requname, requpass, reqemail, reqemailcode)
-		if derr != nil {
-			basicLayoutLookupRespond("register", w, r, map[string]any{"RegisterErrorMsg": "Database call error: " + derr.Error(), "LastAttempt": la})
+		tag, err := dbpool.Exec(r.Context(), "INSERT INTO accounts (username, password, email, email_confirm_code) VALUES($1, $2, $3, $4) ON CONFLICT DO NOTHING", requname, requpass, reqemail, reqemailcode)
+		if err != nil {
+			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return
 		}
 		if tag.RowsAffected() != 1 {
-			basicLayoutLookupRespond("register", w, r, map[string]any{"RegisterErrorMsg": "Database insert error, rows affected " + string(tag), "LastAttempt": la})
+			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+			modSendWebhook(fmt.Sprintf("%s\n%s", string(tag), string(debug.Stack())))
 			return
 		}
 		basicLayoutLookupRespond("register", w, r, map[string]any{"SuccessRegister": true})
@@ -228,9 +229,10 @@ func emailconfHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	key := keys[0]
-	tag, derr := dbpool.Exec(r.Context(), "UPDATE accounts SET email_confirmed = now(), email_confirm_code = '' WHERE email_confirm_code = $1", key)
-	if derr != nil {
-		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msg": "Database call error: " + derr.Error(), "msgred": true})
+	tag, err := dbpool.Exec(r.Context(), "UPDATE accounts SET email_confirmed = now(), email_confirm_code = '' WHERE email_confirm_code = $1", key)
+	if err != nil {
+		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 	if tag.RowsAffected() != 1 {
@@ -271,10 +273,10 @@ func recoverPasswordHandler(w http.ResponseWriter, r *http.Request) {
 				basicLayoutLookupRespond("passwordReset", w, r, map[string]any{"RecoverDetailedError": "Password must be between 6 and 25 symbols in length"})
 				return
 			}
-			tag, derr := dbpool.Exec(r.Context(), "UPDATE accounts SET password = $1, email_confirm_code = 'resetcomplete' WHERE email_confirm_code = $2", hashPassword(r.PostFormValue("password")), r.PostFormValue("code"))
-			if derr != nil {
+			tag, err := dbpool.Exec(r.Context(), "UPDATE accounts SET password = $1, email_confirm_code = 'resetcomplete' WHERE email_confirm_code = $2", hashPassword(r.PostFormValue("password")), r.PostFormValue("code"))
+			if err != nil {
 				basicLayoutLookupRespond("passwordReset", w, r, map[string]any{"RecoverError": true})
-				log.Print(derr)
+				modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 				return
 			}
 			if tag.RowsAffected() != 1 {
@@ -294,7 +296,7 @@ func recoverPasswordHandler(w http.ResponseWriter, r *http.Request) {
 			err := dbpool.QueryRow(r.Context(), "SELECT terminated FROM accounts WHERE email = $1 AND coalesce(extract(epoch from email_confirmed), 0) != 0", r.PostFormValue("email")).Scan(&reqTerminated)
 			if err != nil {
 				basicLayoutLookupRespond("recoveryRequest", w, r, map[string]any{"RecoverError": true})
-				log.Print(err)
+				modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 				return
 			}
 			if reqTerminated {
@@ -302,14 +304,15 @@ func recoverPasswordHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			reqemailcode := generateRandomString(50)
-			tag, derr := dbpool.Exec(r.Context(), "UPDATE accounts SET email_confirm_code = $1 WHERE email = $2", reqemailcode, r.PostFormValue("email"))
-			if derr != nil {
+			tag, err := dbpool.Exec(r.Context(), "UPDATE accounts SET email_confirm_code = $1 WHERE email = $2", reqemailcode, r.PostFormValue("email"))
+			if err != nil {
 				basicLayoutLookupRespond("recoveryRequest", w, r, map[string]any{"RecoverError": true})
-				log.Print(derr)
+				modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 				return
 			}
 			if tag.RowsAffected() != 1 {
 				basicLayoutLookupRespond("recoveryRequest", w, r, map[string]any{"RecoverError": true})
+				modSendWebhook(fmt.Sprintf("%s\n%s", tag.String(), string(debug.Stack())))
 				return
 			}
 			log.Printf("Password recovery attempt [%s]", r.PostFormValue("email"))
@@ -327,12 +330,11 @@ func recoverPasswordHandler(w http.ResponseWriter, r *http.Request) {
 		numEmailsErr := dbpool.QueryRow(r.Context(), "SELECT COUNT(*) FROM accounts WHERE email_confirm_code = $1", keys[0]).Scan(&numEmails)
 		if numEmailsErr != nil {
 			basicLayoutLookupRespond("recoveryRequest", w, r, map[string]any{"RecoverError": true})
-			log.Print(numEmailsErr)
+			modSendWebhook(fmt.Sprintf("%s\n%s", numEmailsErr.Error(), string(debug.Stack())))
 			return
 		}
 		if numEmails != 1 {
 			basicLayoutLookupRespond("recoveryRequest", w, r, map[string]any{"RecoverError": true})
-			log.Print("No email", numEmails)
 			return
 		}
 		basicLayoutLookupRespond("passwordReset", w, r, map[string]any{"RecoveryCode": keys[0]})
