@@ -1,4 +1,5 @@
 package main
+import "html"
 
 import (
 	"bytes"
@@ -123,12 +124,12 @@ func stringOneOf(a string, b ...string) bool {
 
 func respondWithCodeAndPlaintext(w http.ResponseWriter, code int, resp string) {
 	w.WriteHeader(code)
-	w.Write([]byte(resp))
+	w.Write([]byte(html.EscapeString(resp)))
 }
 
 func logRespondWithCodeAndPlaintext(w http.ResponseWriter, code int, resp string) {
 	log.Println(resp)
-	respondWithCodeAndPlaintext(w, code, resp)
+	respondWithCodeAndPlaintext(w, code, html.EscapeString(resp))
 }
 
 func respondWithUnauthorized(w http.ResponseWriter, r *http.Request) {
