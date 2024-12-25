@@ -123,7 +123,7 @@ func stringOneOf(a string, b ...string) bool {
 }
 
 func notifyErrorWebhook(msg string) {
-	err := modSendWebhook(msg)
+	err := sendWebhook(cfg.GetDSString("", "webhooks", "errors"), msg)
 	if err != nil {
 		log.Println(err)
 	}
