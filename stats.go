@@ -34,7 +34,7 @@ func statsHandler(w http.ResponseWriter, r *http.Request) {
 		var d, c int
 		rows, err := dbpool.Query(ctx, `SELECT COUNT(gg) AS c, EXTRACT('hour' FROM timestarted) AS d FROM games AS gg GROUP BY d ORDER BY d`)
 		if err != nil {
-			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+			notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return err
 		}
 		pgx.ForEachRow(rows, []any{&c, &d},
@@ -47,7 +47,7 @@ func statsHandler(w http.ResponseWriter, r *http.Request) {
 		var d, c int
 		rows, err := dbpool.Query(ctx, `SELECT COUNT(gg) AS c, EXTRACT('hour' FROM timestarted) AS d FROM games AS gg WHERE not gg.ratingdiff @> ARRAY[0] GROUP BY d ORDER BY d`)
 		if err != nil {
-			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+			notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return err
 		}
 		pgx.ForEachRow(rows, []any{&c, &d},
@@ -60,7 +60,7 @@ func statsHandler(w http.ResponseWriter, r *http.Request) {
 		var d, c int
 		rows, err := dbpool.Query(ctx, `SELECT COUNT(gg) AS c, EXTRACT('isodow' FROM timestarted) AS d FROM games AS gg GROUP BY d ORDER BY d`)
 		if err != nil {
-			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+			notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return err
 		}
 		pgx.ForEachRow(rows, []any{&c, &d},
@@ -73,7 +73,7 @@ func statsHandler(w http.ResponseWriter, r *http.Request) {
 		var d, c int
 		rows, err := dbpool.Query(ctx, `SELECT COUNT(gg) AS c, EXTRACT('isodow' FROM timestarted) AS d FROM games AS gg WHERE timestarted + '2 weeks'::interval > now() GROUP BY d ORDER BY d`)
 		if err != nil {
-			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+			notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return err
 		}
 		pgx.ForEachRow(rows, []any{&c, &d},
@@ -87,7 +87,7 @@ func statsHandler(w http.ResponseWriter, r *http.Request) {
 		var count int
 		rows, err := dbpool.Query(ctx, `SELECT mapname, COUNT(*) AS c FROM games WHERE timestarted + '2 weeks'::interval > now() GROUP BY mapname ORDER BY c DESC LIMIT 30`)
 		if err != nil {
-			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+			notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return err
 		}
 		pgx.ForEachRow(rows, []any{&mapname, &count},
@@ -111,7 +111,7 @@ func statsHandler(w http.ResponseWriter, r *http.Request) {
 	GROUP BY d
 	ORDER BY d DESC`)
 		if err != nil {
-			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+			notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return err
 		}
 		pgx.ForEachRow(rows, []any{&date, &count, &avg},
@@ -137,7 +137,7 @@ func statsHandler(w http.ResponseWriter, r *http.Request) {
 	GROUP BY gg.d
 	ORDER BY gg.d DESC`)
 		if err != nil {
-			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+			notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return err
 		}
 		pgx.ForEachRow(rows, []any{&date, &count, &avg},
@@ -182,7 +182,7 @@ where calculated = true
 group by playercount
 order by playercount`)
 		if err != nil {
-			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+			notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return err
 		}
 		pgx.ForEachRow(rows, []any{&pc, &c},
@@ -199,7 +199,7 @@ where calculated = true and timestarted + '2 months' > now()
 group by playercount
 order by playercount`)
 		if err != nil {
-			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+			notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return err
 		}
 		pgx.ForEachRow(rows, []any{&pc, &c},
@@ -216,7 +216,7 @@ where calculated = true and ratingdiff[1] != 0
 group by playercount
 order by playercount`)
 		if err != nil {
-			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+			notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return err
 		}
 		pgx.ForEachRow(rows, []any{&pc, &c},
@@ -233,7 +233,7 @@ where calculated = true and ratingdiff[1] != 0 and timestarted + '2 months' > no
 group by playercount
 order by playercount`)
 		if err != nil {
-			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+			notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return err
 		}
 		pgx.ForEachRow(rows, []any{&pc, &c},

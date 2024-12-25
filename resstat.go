@@ -65,7 +65,7 @@ func resstatHandler(w http.ResponseWriter, r *http.Request) {
 	err := dbpool.QueryRow(context.Background(), `SELECT array_agg(DISTINCT COALESCE(version, 'any')) FROM games;`).Scan(&versions)
 	if err != nil {
 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 	sqbase := 1
@@ -115,7 +115,7 @@ func resstatHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 	defer rows.Close()
@@ -149,13 +149,13 @@ func resstatHandler(w http.ResponseWriter, r *http.Request) {
 		err := rows.Scan(&gid, &players, &reslogj)
 		if err != nil {
 			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+			notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return
 		}
 		var reslog []research
 		if err := json.Unmarshal([]byte(reslogj), &reslog); err != nil {
 			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+			notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return
 		}
 		for _, e := range reslog {
@@ -220,7 +220,7 @@ func resstatHandler(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+			notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return
 		}
 		for _, v := range j {

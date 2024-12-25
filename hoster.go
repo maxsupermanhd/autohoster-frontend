@@ -108,7 +108,7 @@ join identities as i on i.account = a.id
 where (a.id = any($1) or a.superadmin = true) and i.pkey is not null;`, r.Form["additionalAdmin"]).Scan(&adminHashes)
 	if err != nil {
 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 
@@ -168,7 +168,7 @@ where (a.id = any($1) or a.superadmin = true) and i.pkey is not null;`, r.Form["
 	hosterResponse, err := RequestHosting(toSendPreset)
 	if err != nil {
 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 
@@ -196,7 +196,7 @@ where a.allow_host_request = true and i.pkey is not null
 order by a.id`)
 	if err != nil {
 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 	whitelistedMaps, ok := cfg.GetMapStringAny("whitelistedMaps")
@@ -222,7 +222,7 @@ func hostRequestAccountPassesChecks(w http.ResponseWriter, r *http.Request) bool
 			sessionManager.Destroy(r.Context())
 		} else {
 			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+			notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		}
 		return false
 	}
@@ -241,7 +241,7 @@ func hostRequestAccountPassesChecks(w http.ResponseWriter, r *http.Request) bool
 			sessionManager.Destroy(r.Context())
 		} else {
 			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+			notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		}
 		return false
 	}
@@ -270,7 +270,7 @@ func wzlinkCheckHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 	if confirmcode == "" {
@@ -278,7 +278,7 @@ func wzlinkCheckHandler(w http.ResponseWriter, r *http.Request) {
 		_, err := dbpool.Exec(r.Context(), `update accounts set wz_confirm_code = $1 where username = $2`, confirmcode, sessionGetUsername(r))
 		if err != nil {
 			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+			notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return
 		}
 		basicLayoutLookupRespond("wzlinkcheck", w, r, map[string]any{"LinkStatus": "code", "WzConfirmCode": "/hostmsg " + confirmcode})
@@ -294,7 +294,7 @@ func wzlinkCheckHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 
@@ -302,14 +302,14 @@ func wzlinkCheckHandler(w http.ResponseWriter, r *http.Request) {
 	err = dbpool.QueryRow(r.Context(), `select count(*) from players where identity = any((select id from identities where pkey = $1));`, logkey).Scan(&linkingGameCount)
 	if err != nil {
 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 	var presentGameCount int
 	err = dbpool.QueryRow(r.Context(), `select count(*) from players where identity = any((select id from identities where account = $1));`, sessionGetUserID(r)).Scan(&presentGameCount)
 	if err != nil {
 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 
@@ -325,7 +325,7 @@ func wzlinkCheckHandler(w http.ResponseWriter, r *http.Request) {
 		logname, logkey, sessionGetUserID(r))
 	if err != nil {
 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 	if tag.Update() && tag.RowsAffected() == 0 {
@@ -336,7 +336,7 @@ func wzlinkCheckHandler(w http.ResponseWriter, r *http.Request) {
 	_, err = dbpool.Exec(context.Background(), `update accounts set wz_confirm_code = null, display_name = $1 where username = $2`, logname, sessionGetUsername(r))
 	if err != nil {
 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 	basicLayoutLookupRespond("wzlinkcheck", w, r, map[string]any{"LinkStatus": "done", "PlayerKey": logkey, "PlayerName": logname})
@@ -357,7 +357,7 @@ func wzlinkHandler(w http.ResponseWriter, r *http.Request) {
 	err := pgxscan.Select(r.Context(), dbpool, &idt, `select id, name, pkey, hash, account from identities where account = $1`, sessionGetUserID(r))
 	if err != nil && err != pgx.ErrNoRows {
 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 	basicLayoutLookupRespond("wzlink", w, r, map[string]any{

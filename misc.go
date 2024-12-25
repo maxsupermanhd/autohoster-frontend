@@ -1,11 +1,11 @@
 package main
-import "html"
 
 import (
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html"
 	"io"
 	"log"
 	"math/rand"
@@ -120,6 +120,14 @@ func stringOneOf(a string, b ...string) bool {
 		}
 	}
 	return false
+}
+
+func notifyErrorWebhook(msg string) {
+	err := modSendWebhook(msg)
+	if err != nil {
+		log.Println(err)
+	}
+	log.Println(msg)
 }
 
 func respondWithCodeAndPlaintext(w http.ResponseWriter, code int, resp string) {

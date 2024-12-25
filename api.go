@@ -7,9 +7,11 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"runtime/debug"
 	"slices"
 	"sort"
 	"strconv"
@@ -36,6 +38,7 @@ func APIcall(c func(http.ResponseWriter, *http.Request) (int, any)) func(http.Re
 				}
 			} else if econtent, ok := content.(error); ok {
 				log.Printf("Error inside handler [%v]: %v", r.URL.Path, econtent.Error())
+				notifyErrorWebhook(fmt.Sprintf("%s\n%s", econtent.Error(), string(debug.Stack())))
 				response, err = json.Marshal(map[string]any{"error": econtent.Error()})
 				if err != nil {
 					code = 500

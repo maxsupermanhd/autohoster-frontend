@@ -116,13 +116,13 @@ group by g.id`
 		&playersJSON)
 	if err != nil {
 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 	err = json.Unmarshal([]byte(playersJSON), &g.Players)
 	if err != nil {
 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 	g.ReplayFound = checkReplayExistsInStorage(r.Context(), g.ID)
@@ -137,7 +137,7 @@ group by g.id`
 	previewImage, err := getMapPreviewWithColors(g.MapHash, slotColors)
 	if err != nil {
 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 
@@ -145,7 +145,7 @@ group by g.id`
 	err = png.Encode(previewImageBuf, previewImage)
 	if err != nil {
 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-		modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
 
@@ -182,7 +182,7 @@ func DbGamesHandler(w http.ResponseWriter, r *http.Request) {
 		select {
 		case err := <-errc:
 			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+			notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return
 		case dmaps = <-dmapsc:
 			dmapspresent = true
@@ -402,7 +402,7 @@ group by g.id
 			if err == pgx.ErrNoRows {
 				return 200, []byte(`{"total": 0, "totalNotFiltered": 0, "rows": []}`)
 			}
-			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+			notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return 500, err
 		case gms = <-growsc:
 			gpresent = true

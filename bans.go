@@ -52,7 +52,7 @@ order by bans.id desc;`)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
 			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+			notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return
 		}
 	}

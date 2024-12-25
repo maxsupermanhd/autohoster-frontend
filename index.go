@@ -89,7 +89,7 @@ where g.time_started > now()-$1::interval`, timeInterval).Scan(&uniqPlayers)
 		from gms
 		group by count`, timeInterval)
 		if err != nil {
-			modSendWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+			notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return err
 		}
 		_, err = pgx.ForEachRow(rows, []any{&pc, &gc}, func() error {
