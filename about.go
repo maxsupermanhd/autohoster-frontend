@@ -51,6 +51,9 @@ func fetchBackendQueues() (ret map[string]backendConfiguredQueue) {
 		return
 	}
 	for _, qn := range qns {
+		if c.GetDBool(false, "queues", qn, "disabled") {
+			continue
+		}
 		qdn, ok := c.GetString("queues", qn, "queueDisplayName")
 		if !ok {
 			continue
