@@ -460,29 +460,17 @@ GROUP BY 1, 3`, gid).Scan(&researchLog, &players, &settingAlliance)
 	`
 	ret += `<table class="rs">`
 	for i, v := range renderPaths {
-		ret += `<tr>`
-		ret += fmt.Sprintf(`<td><a onclick="rsToggle('.rsPath%d');">👁</a></td>`, i)
-		ret += `<td>` + v[0] + `</td>`
-		if displayTeams {
-			for _, t := range teams {
-				ret += fmt.Sprintf(`<td>%c</td>`, "ABCDEFGHIJKLM"[t.index])
-			}
-		} else {
-			for _, pl := range players {
-				ret += fmt.Sprintf(`<td class="wz-color-background-%d">%s</td>`, pl.Color, pl.Name)
-			}
-		}
-		ret += `</tr>`
+		respathTable := ""
 		resShown := 0
 		for _, r := range v[1:] {
 			if _, ok := topTimes[r]; !ok {
 				continue
 			}
 			resShown++
-			ret += fmt.Sprintf(`<tr class="rsPath%d" style="display: none;">`, i)
-			ret += `<td><a href="https://betaguide.wz2100.net/research.html?details_id=` + r + `">
+			respathTable += fmt.Sprintf(`<tr class="rsPath%d" style="display: none;">`, i)
+			respathTable += `<td><a href="https://betaguide.wz2100.net/research.html?details_id=` + r + `">
 	<img src="https://betaguide.wz2100.net/img/data_icons/Research/` + getResearchName(r) + `.gif"></a></td>`
-			ret += `<td><a href="https://betaguide.wz2100.net/research.html?details_id=` + r + `">` + getResearchName(r) + `<br>` + r + `</a></td>`
+			respathTable += `<td><a href="https://betaguide.wz2100.net/research.html?details_id=` + r + `">` + getResearchName(r) + `<br>` + r + `</a></td>`
 
 			if displayTeams {
 				for t := range teams {
@@ -499,7 +487,7 @@ GROUP BY 1, 3`, gid).Scan(&researchLog, &players, &settingAlliance)
 							tcol = ` style="color: red;" `
 						}
 					}
-					ret += fmt.Sprintf(`<td %s >%v</td>`, tcol, tcont)
+					respathTable += fmt.Sprintf(`<td %s >%v</td>`, tcol, tcont)
 				}
 			} else {
 				for _, pl := range players {
@@ -516,13 +504,26 @@ GROUP BY 1, 3`, gid).Scan(&researchLog, &players, &settingAlliance)
 							tcol = ` style="color: red;" `
 						}
 					}
-					ret += fmt.Sprintf(`<td %s >%v</td>`, tcol, tcont)
+					respathTable += fmt.Sprintf(`<td %s >%v</td>`, tcol, tcont)
+				}
+			}
+			respathTable += `</tr>`
+		}
+		if resShown != 0 {
+			ret += `<tr>`
+			ret += fmt.Sprintf(`<td><a onclick="rsToggle('.rsPath%d');">👁</a></td>`, i)
+			ret += `<td>` + v[0] + `</td>`
+			if displayTeams {
+				for _, t := range teams {
+					ret += fmt.Sprintf(`<td>%c</td>`, "ABCDEFGHIJKLM"[t.index])
+				}
+			} else {
+				for _, pl := range players {
+					ret += fmt.Sprintf(`<td class="wz-color-background-%d">%s</td>`, pl.Color, pl.Name)
 				}
 			}
 			ret += `</tr>`
-		}
-		if resShown == 0 {
-			ret += fmt.Sprintf(`<tr class="rsPath%d" style="display: none;"><td>∅</td></tr>`, i)
+			ret += respathTable
 		}
 	}
 	ret += `</table>`
