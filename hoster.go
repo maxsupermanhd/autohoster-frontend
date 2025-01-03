@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -267,6 +266,7 @@ func wzlinkCheckHandler(w http.ResponseWriter, r *http.Request) {
 		if err == pgx.ErrNoRows {
 			sessionManager.Destroy(r.Context())
 			w.Header().Set("Refresh", "1; /")
+			w.WriteHeader(http.StatusConflict)
 			return
 		}
 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
@@ -284,62 +284,7 @@ func wzlinkCheckHandler(w http.ResponseWriter, r *http.Request) {
 		basicLayoutLookupRespond("wzlinkcheck", w, r, map[string]any{"LinkStatus": "code", "WzConfirmCode": "/hostmsg " + confirmcode})
 		return
 	}
-	var logname string
-	var logkey []byte
-	err = dbpool.QueryRow(context.Background(), `select name, pkey from chatlog where msg = $1 limit 1`,
-		"/hostmsg "+confirmcode).Scan(&logname, &logkey)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			basicLayoutLookupRespond("wzlinkcheck", w, r, map[string]any{"LinkStatus": "code", "WzConfirmCode": "/hostmsg " + confirmcode})
-			return
-		}
-		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
-		return
-	}
-
-	var linkingGameCount int
-	err = dbpool.QueryRow(r.Context(), `select count(*) from players where identity = any((select id from identities where pkey = $1));`, logkey).Scan(&linkingGameCount)
-	if err != nil {
-		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
-		return
-	}
-	var presentGameCount int
-	err = dbpool.QueryRow(r.Context(), `select count(*) from players where identity = any((select id from identities where account = $1));`, sessionGetUserID(r)).Scan(&presentGameCount)
-	if err != nil {
-		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
-		return
-	}
-
-	if presentGameCount > 0 && linkingGameCount > 0 {
-		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Identitiy already participated in games supported by Autohoster. You can only link identity with games once."})
-		return
-	}
-
-	tag, err := dbpool.Exec(context.Background(), `
-		insert into identities (name, pkey, hash, account)
-		values ($1, $2, encode(sha256($2), 'hex'), $3)
-		on conflict (hash) do update set account = $3 where identities.account is null and identities.pkey = $2`,
-		logname, logkey, sessionGetUserID(r))
-	if err != nil {
-		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
-		return
-	}
-	if tag.Update() && tag.RowsAffected() == 0 {
-		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "You attempted to link already claimed identity, this is not allowed."})
-		return
-	}
-
-	_, err = dbpool.Exec(context.Background(), `update accounts set wz_confirm_code = null, display_name = $1 where username = $2`, logname, sessionGetUsername(r))
-	if err != nil {
-		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
-		return
-	}
-	basicLayoutLookupRespond("wzlinkcheck", w, r, map[string]any{"LinkStatus": "done", "PlayerKey": logkey, "PlayerName": logname})
+	basicLayoutLookupRespond("wzlinkcheck", w, r, map[string]any{"LinkStatus": "code", "WzConfirmCode": "/hostmsg " + confirmcode})
 }
 
 func wzlinkHandler(w http.ResponseWriter, r *http.Request) {
