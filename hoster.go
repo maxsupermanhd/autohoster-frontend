@@ -161,6 +161,7 @@ where (a.id = any($1) or a.superadmin = true) and i.pkey is not null;`, r.Form["
 				"hash": inf.Download.Hash,
 			},
 		},
+		"frameinterval": inf.Slots / 2,
 	}
 	spew.Dump(toSendPreset)
 
