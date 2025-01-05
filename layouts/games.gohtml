@@ -432,6 +432,11 @@
 				chart.config.options.scales.y.title.text = dfieldsT[dfields.indexOf(name)];
 				ChartUpdateStyle();
 			}
+			function gameTimeToTimestamp(gt) {
+				let minutes = Math.floor(gt / 60000);
+				let seconds = ((gt % 60000) / 1000).toFixed(0);
+				return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
+			}
 			function PlotData(JsonData) {
 				const resp = JSON.parse(JsonData).sort((f, s) => { return f.gameTime - s.gameTime });
 				let ctx = document.getElementById('GraphCanvas').getContext('2d');
@@ -439,14 +444,11 @@
 				dfields.forEach((v) => {
 					dany[v] = JSON.parse(JSON.stringify(dtempl));
 				});
-				let xmin = "0:02";
-				let xmax = "0:04";
+				let xmin = gameTimeToTimestamp(resp[0].gameTime);
+				let xmax = gameTimeToTimestamp(resp[resp.length-1].gameTime);
 				resp.forEach((tick, i) => {
-					let minutes = Math.floor(tick.gameTime / 60000);
-					let seconds = ((tick.gameTime % 60000) / 1000).toFixed(0);
-					let tstamp = minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
+					let tstamp = gameTimeToTimestamp(tick.gameTime);
 					l.push(tstamp);
-					xmax = tstamp;
 					for (let variable in tick) {
 						if (Array.isArray(tick[variable])) {
 							tick[variable].splice(dtempl.length);
