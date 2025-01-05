@@ -56,3 +56,38 @@
 	</body>
 </html>
 {{end}}
+{{define "logout"}}
+<!doctype html>
+<html translate="no">
+	<head>
+		{{template "head"}}
+		<title>Autohoster logout</title>
+	</head>
+	<body>
+		{{template "NavPanel" . }}
+		<div class="px-4 py-5 my-5 text-center">
+			<div class="alert alert-success" role="alert">
+				Logged out. Cookie was cleard. Session destroyed.
+			</div>
+		</div>
+	</body>
+</html>
+{{end}}
+{{define "noauth"}}
+<!doctype html>
+<html translate="no">
+	<head>
+		{{template "head"}}
+		<title>Autohoster</title>
+	</head>
+	<body>
+		{{template "NavPanel" . }}
+		<div class="px-4 py-5 my-5 text-center">
+			<h3>Not Authorized</h3>
+			<a href="/login" class="btn btn-primary">Log in</a>
+			<a href="/register" class="btn btn-primary">Register</a>
+		</div>
+	</body>
+</html>
+{{end}}
+
