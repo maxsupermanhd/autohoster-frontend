@@ -123,11 +123,14 @@ func stringOneOf(a string, b ...string) bool {
 }
 
 func notifyErrorWebhook(msg string) {
+	log.Println(msg)
+	if strings.Contains(msg, "cannot scan timestamp (OID 1114) in binary format into **time.Time") {
+		return
+	}
 	err := sendWebhook(cfg.GetDSString("", "webhooks", "errors"), msg)
 	if err != nil {
 		log.Println(err)
 	}
-	log.Println(msg)
 }
 
 func respondWithCodeAndPlaintext(w http.ResponseWriter, code int, resp string) {
