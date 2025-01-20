@@ -107,7 +107,7 @@ from games as g
 join players as p on p.game = g.id
 join identities as i on i.id = p.identity
 left join accounts as a on a.id = i.account
-left join names on names.id = a.name
+left join names as n on n.id = a.name
 where g.time_started = $1
 group by g.id`
 	g := Game{}
