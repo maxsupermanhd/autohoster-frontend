@@ -54,7 +54,8 @@ func APIgetResearchSummary(w http.ResponseWriter, r *http.Request) (int, any) {
 		'Identity', i.id,
 		'IdentityPubKey', encode(i.pkey, 'hex'),
 		'Account', a.id,
-		'Name', coalesce(a.display_name, 'noname'),
+		'DisplayName', coalesce(n.display_name, substring(encode(i.pkey, 'hex') for 5)),
+		'ClearName', coalesce(n.clear_name, ''),
 		'Rating', (select r from rating as r where r.category = g.display_category and r.account = i.account),
 		'Props', p.props
 	))::jsonb,
@@ -63,6 +64,7 @@ FROM games as g
 JOIN players as p on g.id = p.game
 JOIN identities as i on p.identity = i.id
 LEFT JOIN accounts as a on a.id = i.account
+LEFT JOIN names as n on n.id = a.name
 WHERE g.id = $1
 GROUP BY 1, 3`, gid).Scan(&researchLog, &players, &settingAlliance)
 	if err != nil {
