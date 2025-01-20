@@ -77,13 +77,9 @@
 <html translate="no">
 	<head>
 		{{template "head"}}
-		<meta content="{{.Player.Name}}" property="og:title">
+		<meta content="" property="og:title">
 		<meta content="https://wz2100-autohost.net/players/{{.Player.IdentityPubKey}}" property="og:url">
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js" integrity="sha512-UXumZrZNiOwnTcZSHLOfcTs0aos2MzBWHXOHOuB0J/R44QB0dwY5JgfbvljXcklVf65Gc4El6RjZ+lnwd2az2g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.3.0/chart.umd.min.js" integrity="sha512-TJ7U6JRJx5IpyvvO9atNnBzwJIoZDaQnQhb0Wmw32Rj5BQHAmJG16WzaJbDns2Wk5VG6gMt4MytZApZG47rCdg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.0.1/chartjs-plugin-zoom.min.js" integrity="sha512-wUYbRPLV5zs6IqvWd88HIqZU/b8TBx+I8LEioQ/UC0t5EMCLApqhIAnUg7EsAzdbhhdgW07TqYDdH3QEXRcPOQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/2.2.1/chartjs-plugin-annotation.min.js" integrity="sha512-qF3T5CaMgSRNrxzu69V3ZrYGnrbRMIqrkE+OrE01DDsYDNo8R1VrtYL8pk+fqhKxUBXQ2z+yV/irk+AbbHtBAg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-		<title>Autohoster player {{.Player.Name}}</title>
+		<title>Autohoster player</title>
 
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css" integrity="sha512-ZnR2wlLbSbr8/c9AgLg3jQPAattCUImNsae6NHYnS9KrIwRdcY9DxFotXhNAKIKbAXlRnujIqUWoXXwqyFOeIQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -99,32 +95,10 @@
 		<script src="/static/bootstrap-table/extensions/sticky-header/bootstrap-table-sticky-header.min.js"></script>
 		<script src="/static/bootstrap-table/tablehelpers.js?v=3"></script>
 		<div class="px-4 py-2 my-2 container">
-			
-			<div class="row">
-				<div class="col">
-					<h3>{{if .Player.Name}}{{.Player.Name}}{{end}}</h3>
-				</div>
-				<div class="col text-end">
-					<div><table>
-						<tr><td>Pkey: </td><td><code class="m-1">{{.Player.IdentityPubKey}}</code></td></tr>
-						<tr><td>Hash: </td><td><code class="m-1">{{.Player.IdentityHash}}</code></td></tr>
-					</table></div>
-				</div>
-			</div>
-			{{/* {{if gt .Player.Userid 0}}
-			<div class="d-flex flex-row justify-content-between flex-wrap">
-				<div><canvas id="ClassificationGraphCanvasTotal"></div>
-				<div><canvas id="ClassificationGraphCanvasRecent"></div>
-				<div class="flex-grow-1"><canvas id="ElodiffGraphCanvas" style="height: 300px"></div>
-			</div>
-			<div class="d-flex flex-row justify-content-center flex-wrap">
-				{{template "primitiveStackedChart" .ChartGamesByPlayercount}}
-				{{template "primitiveStackedChart" .ChartGamesByBaselevel}}
-				{{template "primitiveStackedChart" .ChartGamesByAlliances}}
-				{{template "primitiveStackedChart" .ChartGamesByScav}}
-			</div>
-			{{end}} */}}
-
+			<div><table>
+				<tr><td>Pkey: </td><td><code class="m-1">{{.Player.IdentityPubKey}}</code></td></tr>
+				<tr><td>Hash: </td><td><code class="m-1">{{.Player.IdentityHash}}</code></td></tr>
+			</table></div>
 			<noscript>
 				Enable javascript to view table contents
 				<style> yes-script { display:none; } </style>
@@ -156,9 +130,6 @@
 		</div>
 		<script>
 		$(function() {
-			//PlotLinearData({{.RatingHistory}}, document.getElementById('ElodiffGraphCanvas').getContext('2d'), '{{.Player.ID}} - {{.Player.Name}}', 'Rating history');
-			//PlotClassData({{.ResearchClassificationTotal}}, document.getElementById('ClassificationGraphCanvasTotal').getContext('2d'), '{{.Player.ID}} - {{.Player.Name}}', 'Research classification (all time)');
-			//PlotClassData({{.ResearchClassificationRecent}}, document.getElementById('ClassificationGraphCanvasRecent').getContext('2d'), '{{.Player.ID}} - {{.Player.Name}}', 'Research classification (last 20 games)'); */}}
 			$('#table').bootstrapTable(Object.assign(defaultTableOptions, {
 				url: "/api/games",
 				queryParams: (params) => {
@@ -174,7 +145,143 @@
 			//	});
 			//});
 		})
+		</script>
+	</body>
+</html>
+{{end}}
+{{define "account"}}
+<!doctype html>
+<html translate="no">
+	<head>
+		{{template "head"}}
+		<meta content="{{.primaryDisplayName}}" property="og:title">
+		<meta content="https://wz2100-autohost.net/players/{{.primaryClearName}}" property="og:url">
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js" integrity="sha512-UXumZrZNiOwnTcZSHLOfcTs0aos2MzBWHXOHOuB0J/R44QB0dwY5JgfbvljXcklVf65Gc4El6RjZ+lnwd2az2g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.3.0/chart.umd.min.js" integrity="sha512-TJ7U6JRJx5IpyvvO9atNnBzwJIoZDaQnQhb0Wmw32Rj5BQHAmJG16WzaJbDns2Wk5VG6gMt4MytZApZG47rCdg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.0.1/chartjs-plugin-zoom.min.js" integrity="sha512-wUYbRPLV5zs6IqvWd88HIqZU/b8TBx+I8LEioQ/UC0t5EMCLApqhIAnUg7EsAzdbhhdgW07TqYDdH3QEXRcPOQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/2.2.1/chartjs-plugin-annotation.min.js" integrity="sha512-qF3T5CaMgSRNrxzu69V3ZrYGnrbRMIqrkE+OrE01DDsYDNo8R1VrtYL8pk+fqhKxUBXQ2z+yV/irk+AbbHtBAg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+		<title>{{.primaryDisplayName}}</title>
+
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css" integrity="sha512-ZnR2wlLbSbr8/c9AgLg3jQPAattCUImNsae6NHYnS9KrIwRdcY9DxFotXhNAKIKbAXlRnujIqUWoXXwqyFOeIQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+		<link href="/static/bootstrap-table/extensions/sticky-header/bootstrap-table-sticky-header.css" rel="stylesheet">
+		<link href="/static/bootstrap-table/extensions/filter-control/bootstrap-table-filter-control.css" rel="stylesheet">
+		<link href="/static/bootstrap-table/bootstrap-table.min.css" rel="stylesheet">
+		<link href="/static/chartscss/charts.min.css" rel="stylesheet">
+	</head>
+	<body>
+		{{template "NavPanel" . }}
+		<script src="/static/bootstrap-table/bootstrap-table.min.js"></script>
+		<script src="/static/bootstrap-table/extensions/filter-control/bootstrap-table-filter-control.min.js"></script>
+		<script src="/static/bootstrap-table/extensions/sticky-header/bootstrap-table-sticky-header.min.js"></script>
+		<script src="/static/bootstrap-table/tablehelpers.js?v=3"></script>
+		<div class="px-4 py-2 my-2 container">
+			{{if ne .primaryClearName .requestedClearName}}<i>You requested information about <code>{{.requestedClearName}}</code> but that player has different primary name now.</i>{{end}}
+			<h2>{{.primaryDisplayName}}</h2>
+			{{if ne (len .and.Names) 1}}
+			<details>
+				<summary>Other names</summary>
+				<p>
+					<table class="table">
+					<tr>
+						<th>Created</th>
+						<th>Display name</th>
+						<th>Clear name</th>
+					</tr>
+					{{range $k, $name := .and.Names}}
+					{{if and (eq $name.Status "approved") (ne $name.ClearName $.primaryClearName)}}
+					<tr>
+						<td><time datetime="{{$name.TimeCreated}}"></time></td>
+						<td>{{$name.DisplayName}}</td>
+						<td>{{$name.ClearName}}</td>
+					</tr>
+					{{end}}
+					{{end}}
+					</table>
+				</p>
+			</details>
+			{{end}}
+			<details>
+				<summary>Claimed identities</summary>
+				<p>
+					<table class="table">
+					<tr>
+						<th>Public key</th>
+						<th>Hash</th>
+					</tr>
+					{{range $pkey, $hash := .claimedIdentities}}
+					<tr>
+						<td><code>{{$pkey}}</code></td>
+						<td><code>{{$hash}}</code></td>
+					</tr>
+					{{end}}
+					</table>
+				</p>
+			</details>
+			<div class="d-flex flex-row justify-content-center flex-wrap">
+				<div><canvas id="ClassificationGraphCanvasTotal"></div>
+				<div><canvas id="ClassificationGraphCanvasRecent"></div>
+				{{/* <div class="flex-grow-1"><canvas id="ElodiffGraphCanvas" style="height: 300px"></div> */}} {{/* justify-content-between */}}
+			</div>
+			<div class="d-flex flex-row justify-content-center flex-wrap">
+				{{template "primitiveStackedChart" .ChartGamesByPlayercount}}
+				{{template "primitiveStackedChart" .ChartGamesByBaselevel}}
+				{{template "primitiveStackedChart" .ChartGamesByAlliances}}
+				{{template "primitiveStackedChart" .ChartGamesByScav}}
+			</div>
+			<noscript>
+				Enable javascript to view table contents
+				<style> yes-script { display:none; } </style>
+			</noscript>
+			<yes-script>
+			<table id="table" class="smart-table">
+				<thead>
+					<tr>
+						<th data-rowspan="1" data-halign="center">ID</th>
+						<th data-rowspan="1" data-halign="center">Date / Duration</th>
+						<th data-rowspan="1" data-halign="center">Map</th>
+						<th data-colspan="3" data-halign="center" data-class="noBottomBorder">Settings</th>
+						<th data-colspan="2" data-halign="center" data-class="noBottomBorder" data-formatter="playersFormatter" data-class="width45" data-filter-control="input">Players</th>
+						<th data-rowspan="2" data-halign="center" data-formatter="detailsBtn"></th>
+					</tr>
+					<tr>
+						<th data-class="hiddenrow" data-formatter="IDFormatter" data-field="ID"></th>
+						<th data-class="hiddenrow" data-formatter="TimeFormatter" data-field="TimeStarted"></th>
+						<th data-class="hiddenrow" data-formatter="MapNameFormatter" data-field="MapName" data-filter-control="select" data-filter-data="var:MapsSelection"></th>
+						<th data-class="hiddenrow" data-field="SettingBase" data-formatter="BaseLevelSettingsFormatter"></th>
+						<th data-class="hiddenrow" data-field="SettingScavs" data-formatter="ScavengersSettingsFormatter"></th>
+						<th data-class="hiddenrow" data-field="SettingAlliance" data-formatter="AlliancesSettingsFormatter"></th>
+						<th data-class="hiddenrow" data-halign="center" data-formatter="playersFormatterA">Won</th>
+						<th data-class="hiddenrow" data-halign="center" data-formatter="playersFormatterB">Lost</th>
+					</tr>
+				</thead>
+			</table>
+			</yes-script>
+		</div>
+		<script>
+		$(function() {
+			//PlotLinearData({{.RatingHistory}}, document.getElementById('ElodiffGraphCanvas').getContext('2d'), '{{.Player.Name}}', 'Rating history');
+			PlotClassData({{.ResearchClassificationTotal}}, document.getElementById('ClassificationGraphCanvasTotal').getContext('2d'), '{{.primaryDisplayName}}', 'Research classification (all time)');
+			PlotClassData({{.ResearchClassificationRecent}}, document.getElementById('ClassificationGraphCanvasRecent').getContext('2d'), '{{.primaryDisplayName}}', 'Research classification (last 20 games)');
+			$('#table').bootstrapTable(Object.assign(defaultTableOptions, {
+				url: "/api/games",
+				queryParams: (params) => {
+					params.clear_name = {{.primaryClearName}}
+					return params
+				},
+			}))
+			//$("#table").on("page-change.bs.table", function (number, size) {
+			//	window.scrollTo({
+			//		top: 0,
+			//		left: 0,
+			//		behavior: 'smooth'
+			//	});
+			//});
+		})
 		function PlotClassData(resp, ctx, title, subtitle) {
+			if(resp == null) {
+				return;
+			}
 			if(Object.keys(resp).length == 0) {
 				return
 			}
@@ -198,6 +305,9 @@
 			});
 		}
 		function PlotLinearData(resp, ctx, title, subtitle) {
+			if(resp == null) {
+				return;
+			}
 			if(Object.keys(resp).length == 0) {
 				return
 			}

@@ -285,6 +285,57 @@ func APIgetIdentities(_ http.ResponseWriter, r *http.Request) (int, any) {
 	})
 }
 
+func APIgetNames(_ http.ResponseWriter, r *http.Request) (int, any) {
+	return genericViewRequest[struct {
+		ID          int
+		Account     int
+		ClearName   string
+		DisplayName string
+		TimeCreated time.Time
+		Status      string
+		Note        string
+	}](r, genericRequestParams{
+		tableName:               "names",
+		limitClamp:              500,
+		sortDefaultOrder:        "desc",
+		sortDefaultColumn:       "id",
+		sortColumns:             []string{"id", "clear_name", "display_name", "status", "account"},
+		filterColumnsFull:       []string{"id", "account"},
+		filterColumnsStartsWith: []string{"clear_name", "display_name"},
+		searchColumn:            "clear_name",
+		searchSimilarity:        0.1,
+		columnMappings: map[string]string{
+			"ID":          "id",
+			"Account":     "account",
+			"ClearName":   "clear_name",
+			"DisplayName": "display_name",
+			"TimeCreated": "time_created",
+			"Status":      "status",
+			"Note":        "note",
+		},
+	})
+}
+
+func modNamesHandler(w http.ResponseWriter, r *http.Request) {
+	status := r.FormValue("status")
+	nameID := r.FormValue("nameID")
+	note := r.FormValue("note")
+	if !stringOneOf(status, "approved", "denied") {
+		respondWithCodeAndPlaintext(w, 400, "Param is bad ("+status+")")
+		return
+	}
+	tag, err := dbpool.Exec(r.Context(), `update names set status = $1, note = $2 where id = $3`, status, note, nameID)
+	if DBErr(w, r, err) {
+		return
+	}
+	if !tag.Update() || tag.RowsAffected() != 1 {
+		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+		notifyErrorWebhook(fmt.Sprintf("%s\n%s", tag.String(), string(debug.Stack())))
+		return
+	}
+	basicLayoutLookupRespond("modNames", w, r, nil)
+}
+
 func modResendEmailConfirm(accountID int) error {
 	var email, emailcode string
 	err := dbpool.QueryRow(context.Background(), `SELECT email, email_confirm_code FROM accounts WHERE id = $1`, accountID).Scan(&email, &emailcode)
@@ -297,15 +348,11 @@ func modResendEmailConfirm(accountID int) error {
 	return sendgridConfirmcode(email, emailcode)
 }
 
-func modIdentitiesHandler(w http.ResponseWriter, r *http.Request) {
+// func modIdentitiesHandler(w http.ResponseWriter, r *http.Request) {
 
-}
+// }
 
 func modReloadConfig(w http.ResponseWriter, r *http.Request) {
-	if !isSuperadmin(r.Context(), sessionGetUsername(r)) {
-		w.WriteHeader(200)
-		w.Write([]byte("no auth\n\n"))
-	}
 	err := cfg.SetFromFileJSON("config.json")
 	w.WriteHeader(200)
 	w.Write([]byte(fmt.Sprintf("%v\n\n", err)))

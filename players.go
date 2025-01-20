@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -12,33 +13,30 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type PlayerLeaderboard struct {
-	ID         int
-	Name       string
-	Hash       string
-	Elo        int
-	Elo2       int
-	Autoplayed int
-	Autolost   int
-	Autowon    int
-	Userid     int
-	Timeplayed int     `json:",omitempty"`
-	Rwon       float64 `json:",omitempty"`
-	Rlost      float64 `json:",omitempty"`
-	LastGame   int     `json:",omitempty"`
-}
-
 func PlayersHandler(w http.ResponseWriter, r *http.Request) {
-	identSpecifier, err := hex.DecodeString(mux.Vars(r)["id"])
-	if err != nil {
-		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msg": "Incorrectly formatted identity key or hash (please ensure it has even number of characters when specifying beginning of sha256 hash of public key)"})
+	urlID := mux.Vars(r)["id"]
+	var accountID int
+	err := dbpool.QueryRow(r.Context(), `select account from names where clear_name = $1 and status = 'approved';`, urlID).Scan(&accountID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		identSpecifier, err := hex.DecodeString(urlID)
+		if err != nil {
+			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msg": "Incorrectly formatted identity key or hash (please ensure it has even number of characters when specifying beginning of sha256 hash of public key)"})
+			return
+		}
+		PlayersIdentityHandler(w, r, identSpecifier)
 		return
 	}
+	if DBErr(w, r, err) {
+		return
+	}
+	PlayersAccountHandler(w, r, accountID, urlID)
+}
+
+func PlayersIdentityHandler(w http.ResponseWriter, r *http.Request, identSpecifier []byte) {
 	var identID int
-	var name *string
 	var identPubKey *string
 	var identHash string
-	err = dbpool.QueryRow(r.Context(), `select i.id, a.display_name, encode(i.pkey, 'hex'), i.hash from identities as i left join accounts as a on a.id = i.account where i.pkey = $1 or i.hash ^@ encode($1, 'hex')`, identSpecifier).Scan(&identID, &name, &identPubKey, &identHash)
+	err := dbpool.QueryRow(r.Context(), `select i.id, encode(i.pkey, 'hex'), i.hash from identities as i where i.pkey = $1 or i.hash ^@ encode($1, 'hex')`, identSpecifier).Scan(&identID, &identPubKey, &identHash)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msg": "Player not found, identity in url can be hex encoded public key or it's sha256 hash"})
@@ -53,188 +51,210 @@ func PlayersHandler(w http.ResponseWriter, r *http.Request) {
 	basicLayoutLookupRespond("player", w, r, map[string]any{
 		"Player": map[string]any{
 			"ID":             identID,
-			"Name":           name,
 			"IdentityPubKey": identPubKey,
 			"IdentityHash":   identHash,
 		},
 	})
+}
 
-	// var pp PlayerLeaderboard
-	// pp.ID = pid
-	// type renameEntry struct {
-	// 	Oldname string
-	// 	Newname string
-	// 	Time    string
-	// }
-	// renames := []renameEntry{}
-	// ChartGamesByPlayercount := newSC("Games by player count", "Game count", "Player count")
-	// ChartGamesByBaselevel := newSC("Games by base level", "Game count", "Base level")
-	// ChartGamesByAlliances := newSC("Games by alliance type (2x2+)", "Game count", "Alliance type")
-	// ChartGamesByScav := newSC("Games by scavengers", "Game count", "Scavengers")
-	// RatingHistory := map[string]eloHist{}
-	// ResearchClassificationTotal := map[string]int{}
-	// ResearchClassificationRecent := map[string]int{}
-	// AltCount := 0
-	// err = dbpool.QueryRow(r.Context(), `
-	// 	SELECT name, hash, elo, elo2, autoplayed, autolost, autowon, coalesce((SELECT id FROM accounts WHERE players.id = accounts.wzprofile2), -1)
-	// 	FROM players WHERE id = $1`, pid).Scan(&pp.Name, &pp.Hash, &pp.Elo, &pp.Elo2, &pp.Autoplayed, &pp.Autolost, &pp.Autowon, &pp.Userid)
-	// if err != nil {
-	// 	if err == pgx.ErrNoRows {
-	// 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msg": "Player not found"})
-	// 	} else if r.Context().Err() == context.Canceled {
-	// 		return
-	// 	} else {
-	// 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Database query error: " + err.Error()})
-	// 	}
-	// 	return
-	// }
-	// err = RequestMultiple(func() error {
-	// 	var o, n, t string
-	// 	_, err := dbpool.QueryFunc(r.Context(), `select oldname, newname, "time"::text from plrenames where id = $1 order by "time" desc;`,
-	// 		[]any{pid}, []any{&o, &n, &t}, func(_ pgx.QueryFuncRow) error {
-	// 			renames = append(renames, renameEntry{Oldname: o, Newname: n, Time: t})
-	// 			return nil
-	// 		})
-	// 	return err
-	// }, func() error {
-	// 	return dbpool.QueryRow(r.Context(), `select coalesce(avg(p.elo2), 0)
-	// 		from games as g
-	// 		cross join unnest(g.players) as up
-	// 		join players as p on up = p.id
-	// 		where
-	// 			array[$1::int] <@ g.players and
-	// 			calculated = true and
-	// 			finished = true and
-	// 			g.usertype[array_position(g.players, $1)] = 'winner' and
-	// 			g.usertype[array_position(g.players, up)] = 'loser' and
-	// 			ratingdiff[1] != 0`, pid).Scan(&pp.Rwon)
-	// }, func() error {
-	// 	return dbpool.QueryRow(r.Context(), `select coalesce(avg(p.elo2), 0)
-	// 		from games as g
-	// 		cross join unnest(g.players) as up
-	// 		join players as p on up = p.id
-	// 		where
-	// 			array[$1::int] <@ g.players and
-	// 			calculated = true and
-	// 			finished = true and
-	// 			g.usertype[array_position(g.players, $1)] = 'loser' and
-	// 			g.usertype[array_position(g.players, up)] = 'winner' and
-	// 			ratingdiff[1] != 0`, pid).Scan(&pp.Rlost)
-	// }, func() error {
-	// 	var k, c int
-	// 	var ut string
-	// 	_, err := dbpool.QueryFunc(r.Context(),
-	// 		`select array_position(players, -1)-1 as pc, coalesce(usertype[array_position(players, $1)], '') as ut, count(id) as c
-	// 		from games
-	// 		where
-	// 			array[$1::int] <@ players and
-	// 			calculated = true and
-	// 			finished = true
-	// 		group by pc, ut
-	// 		order by pc, ut`,
-	// 		[]any{pid}, []any{&k, &ut, &c},
-	// 		func(_ pgx.QueryFuncRow) error {
-	// 			switch ut {
-	// 			case "loser":
-	// 				ChartGamesByPlayercount.appendToColumn(fmt.Sprintf("%dp", k), "Lost", chartSCcolorLost, c)
-	// 			case "winner":
-	// 				ChartGamesByPlayercount.appendToColumn(fmt.Sprintf("%dp", k), "Won", chartSCcolorWon, c)
-	// 			}
-	// 			return nil
-	// 		})
-	// 	return err
-	// }, func() error {
-	// 	var k, c int
-	// 	var ut string
-	// 	_, err := dbpool.QueryFunc(r.Context(),
-	// 		`select baselevel, usertype[array_position(players, $1)] as ut, count(id)
-	// 		from games
-	// 		where
-	// 			array[$1::int] <@ players and
-	// 			calculated = true and
-	// 			finished = true
-	// 		group by baselevel, ut
-	// 		order by baselevel, ut`,
-	// 		[]any{pid}, []any{&k, &ut, &c},
-	// 		func(_ pgx.QueryFuncRow) error {
-	// 			switch ut {
-	// 			case "loser":
-	// 				ChartGamesByBaselevel.appendToColumn(fmt.Sprintf(`<img class="icons icons-base%d">`, k), "Lost", chartSCcolorLost, c)
-	// 			case "winner":
-	// 				ChartGamesByBaselevel.appendToColumn(fmt.Sprintf(`<img class="icons icons-base%d">`, k), "Won", chartSCcolorWon, c)
-	// 			}
-	// 			return nil
-	// 		})
-	// 	return err
-	// }, func() error {
-	// 	var k, c int
-	// 	_, err := dbpool.QueryFunc(r.Context(),
-	// 		`select alliancetype, count(id)
-	// 		from games
-	// 		where
-	// 			array[$1::int] <@ players and
-	// 			calculated = true and
-	// 			finished = true and
-	// 			array_position(players, -1)-1 > 2
-	// 		group by alliancetype`,
-	// 		[]any{pid}, []any{&k, &c},
-	// 		func(_ pgx.QueryFuncRow) error {
-	// 			if k == 1 {
-	// 				return nil
-	// 			}
-	// 			ChartGamesByAlliances.appendToColumn(fmt.Sprintf(`<img class="icons icons-alliance%d">`, templatesAllianceToClassI(k)), "", chartSCcolorNeutral, c)
-	// 			return nil
-	// 		})
-	// 	return err
-	// }, func() error {
-	// 	var k, c int
-	// 	_, err := dbpool.QueryFunc(r.Context(),
-	// 		`select scavs::int, count(id)
-	// 		from games
-	// 		where
-	// 			array[$1::int] <@ players and
-	// 			calculated = true and
-	// 			finished = true
-	// 		group by scavs`,
-	// 		[]any{pid}, []any{&k, &c},
-	// 		func(_ pgx.QueryFuncRow) error {
-	// 			ChartGamesByScav.appendToColumn(fmt.Sprintf(`<img class="icons icons-scav%d">`, k), "", chartSCcolorNeutral, c)
-	// 			return nil
-	// 		})
-	// 	return err
-	// }, func() error {
-	// 	var err error
-	// 	ResearchClassificationTotal, ResearchClassificationRecent, err = getPlayerClassifications(pid)
-	// 	return err
-	// }, func() error {
-	// 	var err error
-	// 	RatingHistory, err = getRatingHistory(pid)
-	// 	return err
-	// }, func() error {
-	// 	return dbpool.QueryRow(r.Context(), `select count(*) from players where hash = any((select distinct hash from chatlog where ip = any((select distinct ip from chatlog where hash = any((select hash from players where hash = any((select distinct hash from chatlog where ip = any((select distinct ip from chatlog where hash = $1)))) order by id desc)) order by ip desc))));`, pp.Hash).Scan(&AltCount)
-	// })
-	// if err != nil {
-	// 	if err == pgx.ErrNoRows {
-	// 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msg": "Player not found"})
-	// 	} else if r.Context().Err() == context.Canceled {
-	// 		return
-	// 	} else {
-	// 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Database query error: " + err.Error()})
-	// 	}
-	// 	return
-	// }
-	// basicLayoutLookupRespond("player", w, r, map[string]any{
-	// 	"Player":                       pp,
-	// 	"Renames":                      renames,
-	// 	"ChartGamesByPlayercount":      ChartGamesByPlayercount.calcTotals(),
-	// 	"ChartGamesByBaselevel":        ChartGamesByBaselevel.calcTotals(),
-	// 	"ChartGamesByAlliances":        ChartGamesByAlliances.calcTotals(),
-	// 	"ChartGamesByScav":             ChartGamesByScav.calcTotals(),
-	// 	"RatingHistory":                RatingHistory,
-	// 	"ResearchClassificationTotal":  ResearchClassificationTotal,
-	// 	"ResearchClassificationRecent": ResearchClassificationRecent,
-	// 	"AltCount":                     AltCount,
-	// })
+func PlayersAccountHandler(w http.ResponseWriter, r *http.Request, accountID int, requestedClearName string) {
+	and, err := accGetNamesData(r.Context(), accountID)
+	if DBErr(w, r, err) {
+		return
+	}
+	var primaryDisplayName, primaryClearName string
+	for _, v := range and.Names {
+		if !v.Selected {
+			continue
+		}
+		primaryClearName = v.ClearName
+		primaryDisplayName = v.DisplayName
+		break
+	}
+
+	rows, err := dbpool.Query(r.Context(), `select pkey, hash from identities where account = $1 and pkey is not null`, accountID)
+	if DBErr(w, r, err) {
+		return
+	}
+	claimedIdentities := map[string]string{}
+	var claimedIdentitiesPkey []byte
+	var claimedIdentitiesHash string
+	_, err = pgx.ForEachRow(rows, []any{&claimedIdentitiesPkey, &claimedIdentitiesHash}, func() error {
+		claimedIdentities[hex.EncodeToString(claimedIdentitiesPkey)] = claimedIdentitiesHash
+		return nil
+	})
+	if DBErr(w, r, err) {
+		return
+	}
+
+	ChartGamesByPlayercount := newSC("Games by player count", "Game count", "Player count")
+	ChartGamesByBaselevel := newSC("Games by base level", "Game count", "Base level")
+	ChartGamesByAlliances := newSC("Games by alliance type (2x2+)", "Game count", "Alliance type")
+	ChartGamesByScav := newSC("Games by scavengers", "Game count", "Scavengers")
+	ResearchClassificationTotal := map[string]int{}
+	ResearchClassificationRecent := map[string]int{}
+
+	err = RequestMultiple(func() error {
+		var err error
+		ResearchClassificationTotal, ResearchClassificationRecent, err = getPlayerClassifications(accountID)
+		return err
+	}, func() error {
+		rows, err := dbpool.Query(r.Context(), `with
+	gg as (select p.usertype as usertype, g.id as gid, count(pc) as measure
+		from games as g
+		join players as pc on g.id = pc.game
+		join players as p on g.id = p.game
+		join identities as i on i.id = p.identity
+		join accounts as a on a.id = i.account
+		where a.id = $1
+		group by g.id, p.usertype
+		order by g.id desc)
+select usertype, measure, count(gid)
+from gg
+where usertype = any('{loser, winner, contender, fighter}')
+group by measure, usertype
+order by measure, usertype`, accountID)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		var measure, gameCount int
+		var userType string
+		_, err = pgx.ForEachRow(rows, []any{&userType, &measure, &gameCount}, func() error {
+			switch userType {
+			case "loser":
+				ChartGamesByPlayercount.appendToColumn(fmt.Sprintf("%dp", measure), "Lost", chartSCcolorLost, gameCount)
+			case "winner":
+				ChartGamesByPlayercount.appendToColumn(fmt.Sprintf("%dp", measure), "Won", chartSCcolorWon, gameCount)
+			}
+			return nil
+		})
+		return err
+	}, func() error {
+		rows, err := dbpool.Query(r.Context(), `with
+	gg as (select p.usertype as usertype, g.id as gid, g.setting_base as measure
+		from games as g
+		join players as pc on g.id = pc.game
+		join players as p on g.id = p.game
+		join identities as i on i.id = p.identity
+		join accounts as a on a.id = i.account
+		where a.id = $1
+		group by g.id, p.usertype
+		order by g.id desc)
+
+select usertype, measure, count(gid)
+from gg
+where usertype = any('{loser, winner, contender, fighter}')
+group by measure, usertype
+order by measure, usertype`, accountID)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		var measure, gameCount int
+		var userType string
+		_, err = pgx.ForEachRow(rows, []any{&userType, &measure, &gameCount}, func() error {
+			switch userType {
+			case "loser":
+				ChartGamesByBaselevel.appendToColumn(fmt.Sprintf(`<img class="icons icons-base%d">`, measure), "Lost", chartSCcolorLost, gameCount)
+			case "winner":
+				ChartGamesByBaselevel.appendToColumn(fmt.Sprintf(`<img class="icons icons-base%d">`, measure), "Won", chartSCcolorWon, gameCount)
+			}
+			return nil
+		})
+		return err
+	}, func() error {
+		rows, err := dbpool.Query(r.Context(), `with
+	gg as (select p.usertype as usertype, g.id as gid, g.setting_scavs as measure
+		from games as g
+		join players as pc on g.id = pc.game
+		join players as p on g.id = p.game
+		join identities as i on i.id = p.identity
+		join accounts as a on a.id = i.account
+		where a.id = $1
+		group by g.id, p.usertype
+		order by g.id desc)
+
+select usertype, measure, count(gid)
+from gg
+where usertype = any('{loser, winner, contender, fighter}')
+group by measure, usertype
+order by measure, usertype`, accountID)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		var measure, gameCount int
+		var userType string
+		_, err = pgx.ForEachRow(rows, []any{&userType, &measure, &gameCount}, func() error {
+			switch userType {
+			case "loser":
+				ChartGamesByScav.appendToColumn(fmt.Sprintf(`<img class="icons icons-scav%d">`, measure), "Lost", chartSCcolorLost, gameCount)
+			case "winner":
+				ChartGamesByScav.appendToColumn(fmt.Sprintf(`<img class="icons icons-scav%d">`, measure), "Won", chartSCcolorWon, gameCount)
+			}
+			return nil
+		})
+		return err
+	}, func() error {
+		rows, err := dbpool.Query(r.Context(), `with
+	gg as (select p.usertype as usertype, g.id as gid, g.setting_alliance as measure, count(pc) as playercount
+		from games as g
+		join players as pc on g.id = pc.game
+		join players as p on g.id = p.game
+		join identities as i on i.id = p.identity
+		join accounts as a on a.id = i.account
+		where a.id = $1
+		group by g.id, p.usertype
+		order by g.id desc)
+
+select usertype, measure, count(gid)
+from gg
+where usertype = any('{loser, winner, contender, fighter}') and playercount > 3
+group by measure, usertype
+order by measure, usertype`, accountID)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		var measure, gameCount int
+		var userType string
+		_, err = pgx.ForEachRow(rows, []any{&userType, &measure, &gameCount}, func() error {
+			switch userType {
+			case "loser":
+				ChartGamesByAlliances.appendToColumn(fmt.Sprintf(`<img class="icons icons-alliance%d">`, templatesAllianceToClassI(measure)), "", chartSCcolorLost, gameCount)
+			case "winner":
+				ChartGamesByAlliances.appendToColumn(fmt.Sprintf(`<img class="icons icons-alliance%d">`, templatesAllianceToClassI(measure)), "", chartSCcolorWon, gameCount)
+			}
+			return nil
+		})
+		return err
+	})
+	if DBErr(w, r, err) {
+		return
+	}
+
+	basicLayoutLookupRespond("account", w, r, map[string]any{
+		"and":                          and,
+		"claimedIdentities":            claimedIdentities,
+		"primaryDisplayName":           primaryDisplayName,
+		"primaryClearName":             primaryClearName,
+		"requestedClearName":           requestedClearName,
+		"ChartGamesByPlayercount":      ChartGamesByPlayercount.calcTotals(),
+		"ChartGamesByBaselevel":        ChartGamesByBaselevel.calcTotals(),
+		"ChartGamesByAlliances":        ChartGamesByAlliances.calcTotals(),
+		"ChartGamesByScav":             ChartGamesByScav.calcTotals(),
+		"ResearchClassificationTotal":  ResearchClassificationTotal,
+		"ResearchClassificationRecent": ResearchClassificationRecent,
+	})
 }
 
 type eloHist struct {

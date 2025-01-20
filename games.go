@@ -22,7 +22,8 @@ import (
 
 type Player struct {
 	Position       int
-	Name           string
+	DisplayName    string
+	ClearName      string
 	Team           int
 	Color          int
 	Identity       int
@@ -92,7 +93,8 @@ select
 		'Identity', i.id,
 		'IdentityPubKey', encode(i.pkey, 'hex'),
 		'Account', a.id,
-		'Name', coalesce(a.display_name, 'noname'),
+		'DisplayName', coalesce(n.display_name, ''),
+		'ClearName', coalesce(n.clear_name, ''),
 		'Rating', CASE  WHEN i.id = 12071 THEN json_build_object(
 							't', 'botwl',
 							'won', (select * from rBotAutoDumbWon),
@@ -105,6 +107,7 @@ from games as g
 join players as p on p.game = g.id
 join identities as i on i.id = p.identity
 left join accounts as a on a.id = i.account
+left join names on names.id = a.name
 where g.time_started = $1
 group by g.id`
 	g := Game{}
@@ -241,6 +244,16 @@ func APIgetGames(_ http.ResponseWriter, r *http.Request) (int, any) {
 			wherecase += " AND g.id = any((select game from plf))"
 		}
 	}
+	clearName := parseQueryString(r, "clear_name", "")
+	if clearName != "" {
+		whereplayerscase = "where $1 = n.clear_name"
+		whereargs = append(whereargs, clearName)
+		if wherecase == "" {
+			wherecase = "WHERE g.id = any((select game from plf))"
+		} else {
+			wherecase += " AND g.id = any((select game from plf))"
+		}
+	}
 	if reqDoFilters {
 		val, ok := reqFilterFields["MapName"]
 		if ok {
@@ -259,9 +272,9 @@ func APIgetGames(_ http.ResponseWriter, r *http.Request) (int, any) {
 	orderargs := []any{}
 
 	if reqSearch != "" {
-		orderargs = append(orderargs, reqSearch)
+		orderargs = []any{reqSearch}
 		argnum := len(whereargs) + 1
-		ordercase = fmt.Sprintf("ORDER BY max(similarity(a.display_name, $%d::text)) desc, %s %s", argnum, reqSortField, reqSortOrder)
+		ordercase = fmt.Sprintf("ORDER BY rank () over (order by min(levenshtein(n.clear_name, $%d::text)) desc) desc, %s %s", argnum, reqSortField, reqSortOrder)
 	}
 
 	limiter := fmt.Sprintf("LIMIT %d", reqLimit)
@@ -301,6 +314,7 @@ func APIgetGames(_ http.ResponseWriter, r *http.Request) (int, any) {
 	from players as p
 	join identities as i on i.id = p.identity
 	left join accounts as a on a.id = i.account
+	left join names as n on n.id = a.name
 	` + whereplayerscase + `
 )
 select
@@ -326,6 +340,7 @@ join identities as i on i.id = p.identity
 	from players as p
 	join identities as i on i.id = p.identity
 	left join accounts as a on a.id = i.account
+	left join names as n on n.id = a.name
 	` + whereplayerscase + `),
 	rBotAutoDumbWon as (select count(*) from players where identity = 12071 and usertype = 'winner'),
 	rBotAutoDumbPlayed as (select count(*) from players where identity = 12071)
@@ -342,7 +357,8 @@ select
 		'Identity', i.id,
 		'IdentityPubKey', encode(i.pkey, 'hex'),
 		'Account', a.id,
-		'Name', coalesce(a.display_name, 'noname'),
+		'DisplayName', coalesce(n.display_name, ''),
+		'ClearName', coalesce(n.clear_name, ''),
 		'Rating', CASE  WHEN i.id = 12071 THEN json_build_object(
 							't', 'botwl',
 							'won', (select * from rBotAutoDumbWon),
@@ -354,6 +370,7 @@ from games as g
 join players as p on p.game = g.id
 join identities as i on i.id = p.identity
 left join accounts as a on a.id = i.account
+left join names as n on n.id = a.name
 ` + wherecase + `
 group by g.id
 ` + ordercase + `

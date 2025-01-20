@@ -43,11 +43,12 @@ func bansHandler(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := dbpool.Query(r.Context(),
 		`select
-	bans.id, accounts.id, accounts.display_name, identities.id, coalesce(encode(identities.pkey, 'hex'), identities.hash),
+	bans.id, accounts.id, coalesce(names.display_name, substring(coalesce(encode(identities.pkey, 'hex'), identities.hash) for 12)), identities.id, coalesce(encode(identities.pkey, 'hex'), identities.hash),
 	time_issued, time_expires, reason, forbids_chatting, forbids_playing, forbids_joining
 from bans
 left join identities on bans.identity = identities.id
 left join accounts on bans.account = accounts.id
+left join names on names.id = accounts.name
 order by bans.id desc;`)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {

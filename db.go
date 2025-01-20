@@ -85,17 +85,6 @@ func genericViewRequest[T any](r *http.Request, params genericRequestParams) (in
 		}
 	}
 
-	reqSearch := parseQueryString(r, "search", "")
-	similarity := params.searchSimilarity
-	if reqSearch != "" && params.searchColumn != "" {
-		whereargs = append(whereargs, reqSearch)
-		if wherecase == "" {
-			wherecase = fmt.Sprintf("WHERE similarity("+params.searchColumn+", $1::text) > %f or "+params.searchColumn+" ~ $1::text", similarity)
-		} else {
-			wherecase += fmt.Sprintf(" AND similarity("+params.searchColumn+", $%d::text) > %f or "+params.searchColumn+" ~ $1::text", len(whereargs), similarity)
-		}
-	}
-
 	if params.addWhereCase != "" {
 		if wherecase == "" {
 			wherecase = "WHERE " + params.addWhereCase
@@ -104,7 +93,13 @@ func genericViewRequest[T any](r *http.Request, params genericRequestParams) (in
 		}
 	}
 
+	reqSearch := parseQueryString(r, "search", "")
+	orderargs := []any{}
 	ordercase := fmt.Sprintf("ORDER BY %s %s", reqSortField, reqSortOrder)
+	if reqSearch != "" {
+		orderargs = []any{reqSearch}
+		ordercase = fmt.Sprintf("ORDER BY rank () over (order by similarity(%s, $%d::text) desc), %s %s", params.searchColumn, len(whereargs)+1, reqSortField, reqSortOrder)
+	}
 	limiter := fmt.Sprintf("LIMIT %d", reqLimit)
 	offset := fmt.Sprintf("OFFSET %d", reqOffset)
 
@@ -118,17 +113,17 @@ func genericViewRequest[T any](r *http.Request, params genericRequestParams) (in
 	var totalsNoFilter int
 	var totals int
 	var rows []*T
-	// log.Println(`SELECT * FROM ` + tn + ` ` + wherecase + ` ` + ordercase + ` ` + offset + ` ` + limiter)
 	err := RequestMultiple(func() error {
 		return dbpool.QueryRow(r.Context(), `SELECT count(`+tn+`) FROM `+tn).Scan(&totalsNoFilter)
 	}, func() error {
 		return dbpool.QueryRow(r.Context(), `SELECT count(`+tn+`) FROM `+tn+` `+wherecase, whereargs...).Scan(&totals)
 	}, func() error {
 		req := `SELECT ` + columnsSpecifier + ` FROM ` + tn + ` ` + wherecase + ` ` + ordercase + ` ` + offset + ` ` + limiter
+		args := append(whereargs, orderargs...)
 		if cfg.GetDSBool(false, "displayQuery") {
-			log.Printf("req %s args %#+v", req, whereargs)
+			log.Printf("req %q args %#+v", req, args)
 		}
-		return pgxscan.Select(r.Context(), dbpool, &rows, req, whereargs...)
+		return pgxscan.Select(r.Context(), dbpool, &rows, req, args...)
 	})
 	if err != nil {
 		return 500, err

@@ -671,6 +671,21 @@
 	color: #ddd;
 }
 
+[data-theme=dark] .modal-footer {
+	color: #ddd;
+	background-color: #222;
+}
+
+[data-theme=dark] .modal-content {
+	color: #ddd;
+	background-color: #222;
+}
+
+[data-theme=dark] .modal-header {
+	color: #ddd;
+	background-color: #222;
+}
+
 .search-input {
 	padding: 2px;
 }

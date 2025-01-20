@@ -1,11 +1,18 @@
 function nameFormatter(value, row) {
-	let DisplayName = row.DisplayName !== undefined ? row.DisplayName : row.Name;
-	if(DisplayName !== undefined && DisplayName.length > 23) {
-		DisplayName = DisplayName.slice(0, 20) + '...';
-	}
+	let DisplayName = row.DisplayName;
+	let ClearName = row.ClearName;
 	let Account = row.Account !== undefined ? row.Account : row.AccountID;
 	let Identity = row.Identity !== undefined ? row.Identity : row.Identity;
 	let IdentityPubKey = row.IdentityPubKey;
+	console.log(row);
+	let DisplayNameClasses = '';
+	if(DisplayName == '') {
+		DisplayName = IdentityPubKey;
+		DisplayNameClasses = 'text-secondary'
+	}
+	if(DisplayName !== undefined && DisplayName.length > 23) {
+		DisplayName = DisplayName.slice(0, 20) + '...';
+	}
 	let Rating = row.Rating;
 	let rr = {top: "", middle: "", bottom: "", customIcon: "",
 		medal: `<object class="rank rank-pacifier"></object>`,
@@ -21,15 +28,21 @@ function nameFormatter(value, row) {
 	let ret = `<div align="left" style="height:45px;">
 	<table cellspacing="0" cellpadding="0" style="margin: 0">
 	<tbody><tr>`;
+	let dn = document.createElement('text');
+	dn.appendChild(document.createTextNode(DisplayName));
+	let playerURL = `/players/`+IdentityPubKey;
+	if(Account !== undefined && Account > 0 && ClearName != '') {
+		playerURL = `/players/`+ClearName;
+	}
+	let playerLink = `<a href="${playerURL}" class="text-nowrap ${DisplayNameClasses}">${dn.outerHTML}</a>`;
 	if(rr.customIcon == "") {
 		ret += `<td class="rank-star">`;
 		ret += rr.top;
 		ret += `</td><td rowspan="3" class="rank-medal">`;
 		ret += rr.medal;
 		ret += `</td><td rowspan="3" class="rank-link">`;
-		let dn = document.createElement('text')
-		dn.appendChild(document.createTextNode(DisplayName))
-		ret += `<a ${IdentityPubKey !== undefined ? "href=\"/players/"+IdentityPubKey+"\"" : ""} class="text-nowrap">${dn.outerHTML}</a><br>`;
+		ret += playerLink;
+		ret += `<br>`;
 		ret += rr.text;
 		ret += `</td></tr><tr><td class="rank-star">`;
 		ret += rr.middle;
@@ -40,9 +53,8 @@ function nameFormatter(value, row) {
 		ret += `<td>`;
 		ret += rr.customIcon;
 		ret += `</td><td class="rank-link">`;
-		let dn = document.createElement('text')
-		dn.appendChild(document.createTextNode(DisplayName))
-		ret += `<a ${IdentityPubKey !== undefined ? "href=\"/players/"+IdentityPubKey+"\"" : ""} class="text-nowrap">${dn.outerHTML}</a><br>`;
+		ret += playerLink;
+		ret += `<br>`;
 		ret += rr.text;
 		ret += `</td></tr>`;
 	}
@@ -53,7 +65,7 @@ function nameFormatter(value, row) {
 function nameFormatterRating(dret, r) {
 	let ret = dret;
 	if(r == null) {
-		ret.text = `<small class="text-secondary class="text-nowrap"">not rated</small>`;
+		ret.text = `<small class="text-secondary text-nowrap">not rated</small>`;
 		ret.medal = ``;
 		return ret
 	}

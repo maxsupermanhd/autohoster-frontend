@@ -40,6 +40,7 @@
 						<li><a class="dropdown-item {{ if eq .NavWhere "modBans" }} active {{ end }}" href="/moderation/bans">Bans</a></li>
 						<li><a class="dropdown-item {{ if eq .NavWhere "modNews" }} active {{ end }}" href="/moderation/news">News</a></li>
 						<li><a class="dropdown-item {{ if eq .NavWhere "modInstances" }} active {{ end }}" href="/moderation/instances">Instances</a></li>
+						<li><a class="dropdown-item {{ if eq .NavWhere "modNames" }} active {{ end }}" href="/moderation/names">Names</a></li>
 					</ul>
 				</li>
 				{{end}}
@@ -62,6 +63,7 @@
 					<ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end" aria-labelledby="profileDropdown">
 						{{if .UserAuthorized}}
 						<li><a class="dropdown-item {{ if eq .NavWhere "account" }} active {{ end }}" href="/account">Account</a></li>
+						<li><a class="dropdown-item {{ if eq .NavWhere "names" }} active {{ end }}" href="/names">Names</a></li>
 						<li><a class="dropdown-item position-relative {{ if eq .NavWhere "wzlink" }} active {{ end }}" href="/wzlink">
 						{{if not .User.HasIdentity}}
 						<span class="position-absolute top-50 start-0 translate-middle p-2 bg-danger rounded-circle">

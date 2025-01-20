@@ -551,6 +551,110 @@
 	</body>
 </html>
 {{end}}
+{{define "modNames"}}
+<!doctype html>
+<html translate="no">
+	<head>
+		{{template "head"}}
+		<title>Mod names</title>
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css" integrity="sha512-ZnR2wlLbSbr8/c9AgLg3jQPAattCUImNsae6NHYnS9KrIwRdcY9DxFotXhNAKIKbAXlRnujIqUWoXXwqyFOeIQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+		<link href="/static/bootstrap-table/extensions/sticky-header/bootstrap-table-sticky-header.css" rel="stylesheet">
+		<link href="/static/bootstrap-table/extensions/filter-control/bootstrap-table-filter-control.css" rel="stylesheet">
+		<link href="/static/bootstrap-table/bootstrap-table.min.css" rel="stylesheet">
+		<style>
+		table.table-fit {
+			width: auto;
+			table-layout: auto;
+		}
+		table.table-fit thead th, table.table-fit tfoot th {
+			width: auto;
+		}
+		table.table-fit tbody td, table.table-fit tfoot td {
+			width: auto;
+		}
+		</style>
+	</head>
+	<body>
+		{{template "NavPanel" . }}
+		<script src="/static/bootstrap-table/bootstrap-table.min.js"></script>
+		<script src="/static/bootstrap-table/extensions/filter-control/bootstrap-table-filter-control.min.js"></script>
+		<script src="/static/bootstrap-table/extensions/sticky-header/bootstrap-table-sticky-header.min.js"></script>
+		<script src="/static/bootstrap-table/tablehelpers.js?v=3"></script>
+		<div class="px-4 py container">
+			<div id="table-toolbar">
+				<h4>Names</h4>
+			</div>
+			<noscript>
+				Enable javascript to view table contents
+				<style> yes-script { display:none; } </style>
+			</noscript>
+			<yes-script>
+			<table id="table" class="smart-table table-fit">
+				<thead>
+					<tr>
+						<th data-field="ID" data-sortable="true" data-filter-control="input">name id</th>
+						<th data-field="Account" data-sortable="true" data-filter-control="input">account id</th>
+						<th data-field="TimeCreated">when created</th>
+						<th data-field="ClearName" data-sortable="true" data-filter-control="input">clear name</th>
+						<th data-field="DisplayName" data-filter-control="input">display name</th>
+						<th data-field="Status" data-sortable="true" data-formatter="statusFormatter">status</th>
+						<th data-formatter="actionsFormatter">actions</th>
+					</tr>
+				</thead>
+			</table>
+			<yes-script>
+		</div>
+		<script>
+		var $table = $('#table')
+		$(function() {
+			$table.bootstrapTable(Object.assign(defaultTableOptions, {
+				sortName: "ID",
+				url: "/api/names",
+				uniqueId: "ID"
+			}));
+		})
+		function statusFormatter(value, row) {
+			let cl = 'text-danger';
+			if(value == 'approved') {
+				cl = 'text-success';
+			}
+			return `<text class="${cl}">${value}</text>`;
+		}
+		function actionsFormatter(value, row) {
+			if(row.Status != "pending") {
+				return "";
+			}
+			return `
+				<div class="row"><div class="col"><form method="post"><input type="hidden" name="nameID" value="${row.ID}"><input type="hidden" name="status" value="approved"><button type="submit" class="btn btn-sm btn-outline-success">✅</button></form></div>
+				<div class="col"><button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#denyReasonModal" onclick="document.getElementById('denyID').value = ${row.ID}">❌</button></div></div>`;
+		}
+		</script>
+		</div>
+		<div class="modal fade" id="denyReasonModal" tabindex="-1" aria-labelledby="denyReasonModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+			<div class="modal-header">
+				<h1 class="modal-title fs-5" id="denyReasonModalLabel">Modal title</h1>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<form method="post">
+			<div class="modal-body">
+				<input type="number" name="nameID" value="${row.ID}" id="denyID" class="form-control">
+				<input type="hidden" name="status" value="denied">
+				<input type="text" name="note" placeholder="deny reason" class="form-control">
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abort</button>
+				<button type="submit" class="btn btn-danger">Deny</button>
+			</div>
+			</form>
+			</div>
+		</div>
+		</div>
+	</body>
+</html>
+{{end}}
 {{define "modInstances"}}
 <!doctype html>
 <html translate="no">

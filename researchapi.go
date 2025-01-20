@@ -10,7 +10,6 @@ import (
 	"slices"
 	"sort"
 	"strconv"
-	"time"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
@@ -519,7 +518,7 @@ GROUP BY 1, 3`, gid).Scan(&researchLog, &players, &settingAlliance)
 				}
 			} else {
 				for _, pl := range players {
-					ret += fmt.Sprintf(`<td class="wz-color-background-%d">%s</td>`, pl.Color, pl.Name)
+					ret += fmt.Sprintf(`<td class="wz-color-background-%d">%s</td>`, pl.Color, pl.DisplayName)
 				}
 			}
 			ret += `</tr>`
@@ -581,21 +580,17 @@ func CountClassification(resl []resEntry) (ret map[int]map[string]int) {
 	return
 }
 
-func getPlayerClassifications(pid int) (total, recent map[string]int, err error) {
+func getPlayerClassifications(accountID int) (total, recent map[string]int, err error) {
 	total = map[string]int{}
 	recent = map[string]int{}
 	rows, err := dbpool.Query(context.Background(),
-		`SELECT coalesce(id, -1), coalesce(researchlog, ''), array_position(players, $1)-1, coalesce(timestarted, now())
-		FROM games 
-		WHERE 
-			$1 = any(players)
-			AND (array_position(players, -1)-1 = 2 OR alliancetype = 3)
-			AND finished = true 
-			AND calculated = true 
-			AND hidden = false 
-			AND deleted = false 
-			AND id > 1032
-		ORDER BY id desc`, pid)
+		`select g.research_log, p."position"
+from games as g
+join players as p on g.id = p.game
+join identities as i on i.id = p.identity
+join accounts as a on a.id = i.account
+where a.id = $1 and g.research_log is not null
+order by g.id desc`, accountID)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return
@@ -603,16 +598,14 @@ func getPlayerClassifications(pid int) (total, recent map[string]int, err error)
 		return
 	}
 	type gameResearch struct {
-		gid       int
 		playerpos int
-		when      time.Time
 		research  string
 		cl        map[int]map[string]int
 	}
 	games := []gameResearch{}
 	for rows.Next() {
 		g := gameResearch{}
-		err = rows.Scan(&g.gid, &g.research, &g.playerpos, &g.when)
+		err = rows.Scan(&g.research, &g.playerpos)
 		if err != nil {
 			return
 		}
@@ -650,12 +643,12 @@ func getPlayerClassifications(pid int) (total, recent map[string]int, err error)
 
 func APIresearchClassification(_ http.ResponseWriter, r *http.Request) (int, any) {
 	params := mux.Vars(r)
-	pids := params["pid"]
-	pid, err := strconv.Atoi(pids)
+	accounts := params["account"]
+	account, err := strconv.Atoi(accounts)
 	if err != nil {
 		return 400, nil
 	}
-	a, b, err := getPlayerClassifications(pid)
+	a, b, err := getPlayerClassifications(account)
 	_ = a
 	_ = b
 	_ = err

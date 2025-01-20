@@ -10,7 +10,7 @@
 			{{range $k, $v := .Data}}<tr>
 				<th scope="row">{{$v.Label}}</th>
 				{{range $kk, $vv := $v.Values}}
-				<td class="data" style="--size: {{divtf64 $vv.Value $.TotalData}}; --color: {{$vv.Color}}"><span class="tooltip">{{$vv.Label}} {{$vv.Value}}</td>
+				<td class="data" style="--size: {{divtf64 $vv.Value $.MaxValue}}; --color: {{$vv.Color}}"><span class="tooltip">{{$vv.Label}} {{$vv.Value}}</td>
 				{{end}}
 			</tr>{{end}}
 		</tbody>

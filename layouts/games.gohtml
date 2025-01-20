@@ -123,9 +123,9 @@
 				</div>
 				<div class="col-sm text-center">
 					{{if $.Preview}}
-					<img src="data:image/png;base64, {{$.Preview}}">
+					<img style="height:100%" src="data:image/png;base64, {{$.Preview}}">
 					{{else}}
-					<img src="https://maps-assets.wz2100.net/v1/maps/{{.MapHash}}/preview.png">
+					<img style="height:100%" src="https://maps-assets.wz2100.net/v1/maps/{{.MapHash}}/preview.png">
 					{{end}}
 				</div>
 				<div class="col-sm text-end">

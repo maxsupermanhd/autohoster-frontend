@@ -9,11 +9,11 @@ var (
 )
 
 type primitiveStackedChart struct {
-	Caption   string
-	AxisY     string
-	AxisX     string
-	Data      []primitiveStackedChartColumn
-	TotalData int
+	Caption  string
+	AxisY    string
+	AxisX    string
+	Data     []primitiveStackedChartColumn
+	MaxValue int
 }
 
 type primitiveStackedChartColumn struct {
@@ -27,29 +27,25 @@ type primitiveStackedChartColumnValue struct {
 	Value int
 }
 
-func newSCColVal(l, c string, v int) primitiveStackedChartColumnValue {
-	return primitiveStackedChartColumnValue{
-		Label: l,
-		Color: c,
-		Value: v,
-	}
-}
-
-func newSC(c, x, y string) *primitiveStackedChart {
+func newSC(caption, axisX, axisY string) *primitiveStackedChart {
 	return &primitiveStackedChart{
-		Caption:   c,
-		AxisY:     y,
-		AxisX:     x,
-		Data:      []primitiveStackedChartColumn{},
-		TotalData: 0,
+		Caption:  caption,
+		AxisY:    axisY,
+		AxisX:    axisX,
+		Data:     []primitiveStackedChartColumn{},
+		MaxValue: 0,
 	}
 }
 
 func (ch *primitiveStackedChart) calcTotals() *primitiveStackedChart {
-	ch.TotalData = 0
+	ch.MaxValue = 0
 	for _, v := range ch.Data {
+		columnSum := 0
 		for _, vv := range v.Values {
-			ch.TotalData += vv.Value
+			columnSum += vv.Value
+		}
+		if columnSum > ch.MaxValue {
+			ch.MaxValue = columnSum
 		}
 	}
 	return ch
@@ -58,12 +54,20 @@ func (ch *primitiveStackedChart) calcTotals() *primitiveStackedChart {
 func (ch *primitiveStackedChart) appendToColumn(colname, label, color string, value int) {
 	for i, v := range ch.Data {
 		if v.Label == template.HTML(colname) {
-			ch.Data[i].Values = append(ch.Data[i].Values, newSCColVal(label, color, value))
+			ch.Data[i].Values = append(ch.Data[i].Values, primitiveStackedChartColumnValue{
+				Label: label,
+				Color: color,
+				Value: value,
+			})
 			return
 		}
 	}
 	ch.Data = append(ch.Data, primitiveStackedChartColumn{
-		Label:  template.HTML(colname),
-		Values: []primitiveStackedChartColumnValue{newSCColVal(label, color, value)},
+		Label: template.HTML(colname),
+		Values: []primitiveStackedChartColumnValue{primitiveStackedChartColumnValue{
+			Label: label,
+			Color: color,
+			Value: value,
+		}},
 	})
 }

@@ -291,6 +291,9 @@ func main() {
 	// router.HandleFunc("/oauth/discord", DiscordCallbackHandler)
 	router.HandleFunc("/report", basicLayoutHandler("report")).Methods("GET")
 	router.HandleFunc("/report", reportHandler).Methods("POST")
+	router.HandleFunc("/names", namesHandler).Methods("GET")
+	router.HandleFunc("/names", namesHandlerPOST).Methods("POST")
+	router.HandleFunc("/namepick", namePickHandler).Methods("GET", "POST")
 
 	router.HandleFunc("/request", hostRequestHandlerGET).Methods("GET")
 	router.HandleFunc("/request", hostRequestHandlerPOST).Methods("POST")
@@ -315,16 +318,20 @@ func main() {
 
 	router.HandleFunc("/moderation/bans", basicSuperadminHandler("modBans")).Methods("GET")
 	router.HandleFunc("/moderation/bans", SuperadminCheck(modBansPOST))
-	router.HandleFunc("/api/bans", APIcall(APIgetBans)).Methods("GET", "OPTIONS")
+	router.HandleFunc("/api/bans", APIcall(APISuperadminCheck(APIgetBans))).Methods("GET", "OPTIONS")
 
 	router.HandleFunc("/moderation/identities", basicSuperadminHandler("modIdentities")).Methods("GET")
-	router.HandleFunc("/moderation/identities", modIdentitiesHandler).Methods("POST")
+	// router.HandleFunc("/moderation/identities", modIdentitiesHandler).Methods("POST")
 	router.HandleFunc("/api/identities", APIcall(APIgetIdentities)).Methods("GET", "OPTIONS")
 
-	router.HandleFunc("/moderation/ratingCategories", basicSuperadminHandler("modRatingCategories")).Methods("GET")
-	router.HandleFunc("/api/ratingCategories", APIcall(APIgetRatingCategories)).Methods("GET", "OPTIONS")
+	router.HandleFunc("/moderation/names", basicSuperadminHandler("modNames")).Methods("GET")
+	router.HandleFunc("/moderation/names", SuperadminCheck(modNamesHandler)).Methods("POST")
+	router.HandleFunc("/api/names", APIcall(APIgetNames)).Methods("GET", "OPTIONS")
 
-	router.HandleFunc("/moderation/reloadConfig", modReloadConfig).Methods("GET")
+	// router.HandleFunc("/moderation/ratingCategories", basicSuperadminHandler("modRatingCategories")).Methods("GET")
+	// router.HandleFunc("/api/ratingCategories", APIcall(APIgetRatingCategories)).Methods("GET", "OPTIONS")
+
+	router.HandleFunc("/moderation/reloadConfig", SuperadminCheck(modReloadConfig)).Methods("GET")
 
 	router.HandleFunc("/rating/{hash:[0-9a-z]+}", ratingHandler)
 	router.HandleFunc("/rating/", ratingHandler)
@@ -334,7 +341,7 @@ func main() {
 	router.HandleFunc(`/games/{id}`, DbGameDetailsHandler)
 	router.HandleFunc("/api/games", APIcall(APIgetGames)).Methods("GET", "OPTIONS")
 
-	router.HandleFunc("/players/{id:[0-9a-f]+}", PlayersHandler)
+	router.HandleFunc("/players/{id}", PlayersHandler)
 
 	router.HandleFunc("/leaderboards", LeaderboardsHandler)
 	router.HandleFunc("/leaderboards/{category:[0-9]+}", LeaderboardHandler).Methods("GET")

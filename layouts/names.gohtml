@@ -1,0 +1,165 @@
+{{define "names"}}
+<!doctype html>
+<html translate="no">
+	<head>
+		{{template "head"}}
+		<title>Autohoster names</title>
+	</head>
+	<body>
+		{{template "NavPanel" . }}
+		<div class="container my-3">
+			<h2>Your Warzone 2100 multiplayer names</h2>
+			<p>You have {{.and.DistinctNameCount}}/{{.and.NameSlots}} name slots used.</p>
+			{{if eq .and.DistinctNameCount .and.NameSlots}}
+			<p><a class="btn btn-primary disabled">Register new name</a> No name slots left</p>
+			{{else if .and.HasPendingNames}}
+			<p><a class="btn btn-primary disabled">Register new name</a> You have name pending approval</p>
+			{{else if .and.NameCreateCooldown}}
+			<p><a class="btn btn-primary disabled">Register new name</a> Cooldown: {{.and.NameCreateTimeLeft}}</p>
+			{{else}}
+			<p><a class="btn btn-primary" href="/namepick">Register new name</a></p>
+			{{end}}
+			{{if eq .and.DistinctNameCount 0}}
+			<p>You don't yet have any names registered.</p>
+			{{else}}
+			<table class="table">
+			<tr>
+				<th>Status</th>
+				<th>Created</th>
+				<th>Display name</th>
+				<th>Clear name</th>
+				<th>Select</th>
+			</tr>
+			{{range $k, $name := .and.Names}}
+			<tr>
+				<td>
+				{{if eq $name.Status "denied"}}
+				<text class="text-danger">
+				{{else if eq $name.Status "pending"}}
+				<text class="text-warning">
+				{{else if eq $name.Status "approved"}}
+				<text class="text-success">
+				{{else}}
+				<text>
+				{{end}}
+				{{$name.Status}}
+				{{if ne "" $name.Note}}
+				<span title="Administrator note: {{$name.Note}}">ⓘ</span>
+				{{end}}</text>
+				</td>
+				<td><time datetime="{{$name.TimeCreated}}"></time></td>
+				<td>{{$name.DisplayName}}</td>
+				<td>{{$name.ClearName}}</td>
+				<td>{{if $name.Selected}}
+				selected
+				{{else}}
+					{{if eq $name.Status "approved"}}
+					<form method="post"><input type="hidden" name="nameID" value="{{$name.ID}}"><input class="btn btn-sm btn-primary" type="submit" name="action" value="select"></form>
+					{{else}}
+					<form method="post"><input type="hidden" name="nameID" value="{{$name.ID}}"><input class="btn btn-sm btn-primary" type="submit" name="action" value="select" disabled></form>
+					{{end}}
+				{{end}}
+				</td>
+			</tr>
+			{{end}}
+			</table>
+			{{end}}
+			<p>If you have any questions regarding multiplayer names system in Autohoster, feel free to contact administrators.</p>
+		</div>
+	</body>
+</html>
+{{end}}
+{{define "namepick"}}
+<!doctype html>
+<html translate="no">
+	<head>
+		{{template "head"}}
+		<title>Autohoster names</title>
+	</head>
+	<body>
+		{{template "NavPanel" . }}
+		<div class="container my-3">
+			<h2>Pick new Warzone 2100 multiplayer name</h2>
+			<p>You have {{len .and.Names}}/{{.and.NameSlots}} name slots used.</p>
+			{{if .rejected}}
+			<div class="row">
+				<p>{{.rejected}}</p>
+			</div>
+			{{end}}
+			<div class="row"><div class="col-4">
+			<form action="/namepick" method="post">
+				<div class="mb-3">
+					<label for="displayName" class="form-label">Display name</label>
+					<input type="text" onkeypress="" class="form-control" minlength="3" maxlength="80" name="displayName" aria-describedby="displayNameHelpBlock" value="{{.retryDisplayName}}" required>
+					<div id="displayNameHelpBlock" class="form-text"><small>For use in-game, on website and in any place where utf-8 text is supported</small></div>
+				</div>
+				<div class="mb-3">
+					<label for="clearName" class="form-label">Clear name</label>
+					<input type="text" onkeypress="" class="form-control" minlength="3" maxlength="25" name="clearName" aria-describedby="clearNameHelpBlock" value="{{.retryClearName}}" required pattern="^[a-zA-Z0-9\._-~]{3,25}$">
+					<div id="clearNameHelpBlock" class="form-text"><small>Display name, but without any decoration, tags and oddities, restricted to following characters:
+					<code>a-zA-Z0-9._-~</code></small></div>
+				</div>
+				<div class="mb-3">
+					<p>At least 1 a-z or A-Z character must be used, name length must be between 2 and 26 symbols.</p>
+					<p>Name submissions are moderated by Autohoster administration, duplicative or impersonating names are not allowed.<p>
+					<p>Clear name is permanent, display name can be altered but it must still match it's clear name representation. Alteration of display name does not consume name slot.<p>
+					<p>Approved names will be permanently logged in your account's history and shown in-game and on website, you can not remove them from history.<p>
+					<p>If administration rejected name creation/alteration your cooldown will be reset.<p>
+				</div>
+				<div class="mb-3">
+					<button type="submit" class="btn btn-outline-success">Submit</button>
+				</div>
+			</form>
+			</div><div class="col">
+			<table class="table"><tr>
+				<td colspan="3">Examples of <b class="text-success">correct</b> display and clear name pairs:</td>
+			</tr><tr>
+				<th>Display name</th>
+				<th>Clear name</th>
+				<th>Note</th>
+			</tr><tr>
+				<td>♂ᵀᴴᴱposhlaya bini♂</td>
+				<td>poshlaya_bini</td>
+				<td>Tags and symbols must be stripped</td>
+			</tr><tr>
+				<td>ģ€ŋ€ЯДL</td>
+				<td>general</td>
+				<td>Special characters must be converted</td>
+			</tr><tr>
+				<td>кактус</td>
+				<td>cactus / kaktus</td>
+				<td>Translation/translitiration required</td>
+			</tr><tr>
+				<td>《孤勇者》</td>
+				<td>TheLoneWarrior / Gu_yongzhe</td>
+				<td>Phonetic transcription allowed</td>
+			</tr><tr>
+				<td colspan="3">Examples of <b class="text-danger">incorrect</b> display and clear name pairs:</td>
+			</tr><tr>
+				<th>Display name</th>
+				<th>Clear name</th>
+				<th>Note</th>
+			</tr><tr>
+				<td>vaut ΣΑ [GN]</td>
+				<td>vaut_GN_</td>
+				<td>Tag was not stripped</td>
+			</tr><tr>
+				<td>Lister</td>
+				<td>Godash</td>
+				<td>Different name used</td>
+			</tr><tr>
+				<td>𝕔𝕝𝕖𝕡𝕥𝕠𝕞𝕒𝕟𝕚𝕤</td>
+				<td>clepto</td>
+				<td>Name not entierly captured<br>Either drop or add <code>manis</code></td>
+			</tr><tr>
+				<td>---___---</td>
+				<td>---___---</td>
+				<td>No pronounceable characters used</td>
+			</tr>
+			</table>
+			</div></div>
+		</div>
+	</body>
+</html>
+{{end}}
+
