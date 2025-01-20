@@ -128,7 +128,7 @@
 						{{range $i, $j := .Admins}}
 						<div>
 							<input type="checkbox" class="form-check-input" id="additionalAdmin{{$j.ID}}" name="additionalAdmin" value="{{$j.ID}}" {{if eq $j.ID $.User.Id}}checked onclick="return false;"{{else}}onclick="localStorage.setItem('adminpick'+{{$j.ID}}, this.checked);"{{end}} />
-							<label for="additionalAdmin{{$j.ID}}">{{$j.Name}}</label>
+							<label for="additionalAdmin{{$j.ID}}">{{$j.DisplayName}}</label>
 						</div>
 						{{end}}
 					</fieldset>

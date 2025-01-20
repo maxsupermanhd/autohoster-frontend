@@ -260,7 +260,7 @@
 		</div>
 		<script>
 		$(function() {
-			//PlotLinearData({{.RatingHistory}}, document.getElementById('ElodiffGraphCanvas').getContext('2d'), '{{.Player.Name}}', 'Rating history');
+			//PlotLinearData({{.RatingHistory}}, document.getElementById('ElodiffGraphCanvas').getContext('2d'), '{{.primaryDisplayName}}', 'Rating history');
 			PlotClassData({{.ResearchClassificationTotal}}, document.getElementById('ClassificationGraphCanvasTotal').getContext('2d'), '{{.primaryDisplayName}}', 'Research classification (all time)');
 			PlotClassData({{.ResearchClassificationRecent}}, document.getElementById('ClassificationGraphCanvasRecent').getContext('2d'), '{{.primaryDisplayName}}', 'Research classification (last 20 games)');
 			$('#table').bootstrapTable(Object.assign(defaultTableOptions, {
@@ -289,7 +289,7 @@
 				type: 'radar', parsing: false, normalized: true,
 				data: {
 					labels: Object.keys(resp),
-					datasets: [{data: Object.values(resp), fill: true, label: '{{.Player.Name}}', borderColor: '#0d6efd'}]
+					datasets: [{data: Object.values(resp), fill: true, label: '{{.Player.DisplayName}}', borderColor: '#0d6efd'}]
 				},
 				options: {spanGaps: true, showLine: true,
 					animation: {duration: 20}, responsive: true, maintainAspectRatio: false,
