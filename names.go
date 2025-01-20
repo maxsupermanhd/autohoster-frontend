@@ -298,5 +298,5 @@ func accGetNamesData(ctx context.Context, accountID int) (ret accountNamesData, 
 }
 
 func getNameChangeDuration() time.Duration {
-	return time.Duration(cfg.GetDInt(0, "nameChangeDays")) * (time.Hour * 24)
+	return time.Duration(cfg.GetDInt(7, "nameChangeDays")) * (time.Hour * 24)
 }
