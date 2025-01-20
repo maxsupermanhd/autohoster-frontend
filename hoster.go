@@ -186,12 +186,13 @@ func hostRequestHandlerGET(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	admins := []*struct {
-		Name string `db:"display_name"`
-		ID   int
+		DisplayName string `db:"display_name"`
+		ID          int
 	}{}
-	err := pgxscan.Select(r.Context(), dbpool, &admins, `select distinct on (a.id) a.display_name, a.id
+	err := pgxscan.Select(r.Context(), dbpool, &admins, `select distinct on (a.id) n.display_name, a.id
 from accounts as a
 join identities as i on i.account = a.id
+join names as n on n.id = a.name
 where a.allow_host_request = true and i.pkey is not null
 order by a.id`)
 	if err != nil {
