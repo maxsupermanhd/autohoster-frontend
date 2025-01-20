@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"runtime/debug"
@@ -69,12 +68,12 @@ func APIcall(c func(http.ResponseWriter, *http.Request) (int, any)) func(http.Re
 
 func APItryReachBackend(w http.ResponseWriter, _ *http.Request) {
 	s, m := RequestStatus()
-	io.WriteString(w, m)
 	if s {
 		w.WriteHeader(http.StatusOK)
 	} else {
 		w.WriteHeader(http.StatusServiceUnavailable)
 	}
+	w.Write([]byte(m))
 }
 
 func APIgetGraphData(_ http.ResponseWriter, r *http.Request) (int, any) {
