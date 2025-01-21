@@ -191,6 +191,7 @@ func namePickHandler(w http.ResponseWriter, r *http.Request) {
 	})) {
 		return
 	}
+	modSendWebhook(fmt.Sprintf("User `%s` created name clear:`%s` display:`%s`", sessionGetUsername(r), subClearName, subDisplayName))
 	namesHandler(w, r)
 }
 

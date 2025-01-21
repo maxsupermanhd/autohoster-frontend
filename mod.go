@@ -333,6 +333,7 @@ func modNamesHandler(w http.ResponseWriter, r *http.Request) {
 		notifyErrorWebhook(fmt.Sprintf("%s\n%s", tag.String(), string(debug.Stack())))
 		return
 	}
+	modSendWebhook(fmt.Sprintf("Administrator `%s` `%s` name `%s` (note `%s`)", sessionGetUsername(r), status, nameID, note))
 	basicLayoutLookupRespond("modNames", w, r, nil)
 }
 
