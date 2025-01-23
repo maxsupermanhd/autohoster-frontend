@@ -734,7 +734,7 @@
 	justify-items: center;
 	grid-template-columns: 1.5rem 1fr;
 	grid-template-rows: auto 1.5rem;
-	grid-template-areas: "data-axis chart" ".         primary-axis";
+	grid-template-areas: "data-axis chart" ".primary-axis";
 }
 
 .charts-css-axistables > table > tbody > tr {

@@ -1,6 +1,10 @@
 package main
 
-import "html/template"
+import (
+	"fmt"
+	"hash/crc32"
+	"html/template"
+)
 
 var (
 	chartSCcolorLost    = "#c33c"
@@ -9,11 +13,15 @@ var (
 )
 
 type primitiveStackedChart struct {
-	Caption  string
-	AxisY    string
-	AxisX    string
-	Data     []primitiveStackedChartColumn
-	MaxValue int
+	ID          string
+	Caption     string
+	AxisY       string
+	AxisX       string
+	Data        []primitiveStackedChartColumn
+	MaxValue    int
+	Orientation string
+	Width       string
+	LabelWidth  string
 }
 
 type primitiveStackedChartColumn struct {
@@ -27,13 +35,29 @@ type primitiveStackedChartColumnValue struct {
 	Value int
 }
 
-func newSC(caption, axisX, axisY string) *primitiveStackedChart {
+func newSCVertical(caption, axisX, axisY string) *primitiveStackedChart {
 	return &primitiveStackedChart{
-		Caption:  caption,
-		AxisY:    axisY,
-		AxisX:    axisX,
-		Data:     []primitiveStackedChartColumn{},
-		MaxValue: 0,
+		ID:          fmt.Sprint(crc32.Checksum([]byte(caption), crc32.IEEETable)),
+		Orientation: "column",
+		Caption:     caption,
+		AxisY:       axisY,
+		AxisX:       axisX,
+		Data:        []primitiveStackedChartColumn{},
+		MaxValue:    0,
+		Width:       "4ex",
+	}
+}
+
+func newSCHorizontal(caption, axisX, axisY string) *primitiveStackedChart {
+	return &primitiveStackedChart{
+		ID:          fmt.Sprint(crc32.Checksum([]byte(caption), crc32.IEEETable)),
+		Orientation: "bar",
+		Caption:     caption,
+		AxisY:       axisY,
+		AxisX:       axisX,
+		Data:        []primitiveStackedChartColumn{},
+		MaxValue:    0,
+		Width:       "unset",
 	}
 }
 

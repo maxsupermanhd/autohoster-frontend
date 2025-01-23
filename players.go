@@ -87,10 +87,12 @@ func PlayersAccountHandler(w http.ResponseWriter, r *http.Request, accountID int
 		return
 	}
 
-	ChartGamesByPlayercount := newSC("Games by player count", "Game count", "Player count")
-	ChartGamesByBaselevel := newSC("Games by base level", "Game count", "Base level")
-	ChartGamesByAlliances := newSC("Games by alliance type (2x2+)", "Game count", "Alliance type")
-	ChartGamesByScav := newSC("Games by scavengers", "Game count", "Scavengers")
+	ChartGamesByPlayercount := newSCVertical("Games by player count", "Game count", "Player count")
+	ChartGamesByBaselevel := newSCVertical("Games by base level", "Game count", "Base level")
+	ChartGamesByAlliances := newSCVertical("Games by alliance type (2x2+)", "Game count", "Alliance type")
+	ChartGamesByScav := newSCVertical("Games by scavengers", "Game count", "Scavengers")
+	ChartGamesByCategory := newSCHorizontal("Games by category", "Category", "Game count")
+	ChartGamesByCategory.LabelWidth = "120px"
 	ResearchClassificationTotal := map[string]int{}
 	ResearchClassificationRecent := map[string]int{}
 
@@ -111,7 +113,7 @@ func PlayersAccountHandler(w http.ResponseWriter, r *http.Request, accountID int
 		order by g.id desc)
 select usertype, measure, count(gid)
 from gg
-where usertype = any('{loser, winner, contender, fighter}')
+where usertype = any('{loser, winner, contender}')
 group by measure, usertype
 order by measure, usertype`, accountID)
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -128,6 +130,8 @@ order by measure, usertype`, accountID)
 				ChartGamesByPlayercount.appendToColumn(fmt.Sprintf("%dp", measure), "Lost", chartSCcolorLost, gameCount)
 			case "winner":
 				ChartGamesByPlayercount.appendToColumn(fmt.Sprintf("%dp", measure), "Won", chartSCcolorWon, gameCount)
+			default:
+				ChartGamesByPlayercount.appendToColumn(fmt.Sprintf("%dp", measure), "Draw", chartSCcolorNeutral, gameCount)
 			}
 			return nil
 		})
@@ -146,7 +150,7 @@ order by measure, usertype`, accountID)
 
 select usertype, measure, count(gid)
 from gg
-where usertype = any('{loser, winner, contender, fighter}')
+where usertype = any('{loser, winner, contender}')
 group by measure, usertype
 order by measure, usertype`, accountID)
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -163,6 +167,8 @@ order by measure, usertype`, accountID)
 				ChartGamesByBaselevel.appendToColumn(fmt.Sprintf(`<img class="icons icons-base%d">`, measure), "Lost", chartSCcolorLost, gameCount)
 			case "winner":
 				ChartGamesByBaselevel.appendToColumn(fmt.Sprintf(`<img class="icons icons-base%d">`, measure), "Won", chartSCcolorWon, gameCount)
+			default:
+				ChartGamesByBaselevel.appendToColumn(fmt.Sprintf(`<img class="icons icons-base%d">`, measure), "Draw", chartSCcolorNeutral, gameCount)
 			}
 			return nil
 		})
@@ -181,7 +187,7 @@ order by measure, usertype`, accountID)
 
 select usertype, measure, count(gid)
 from gg
-where usertype = any('{loser, winner, contender, fighter}')
+where usertype = any('{loser, winner, contender}')
 group by measure, usertype
 order by measure, usertype`, accountID)
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -198,6 +204,8 @@ order by measure, usertype`, accountID)
 				ChartGamesByScav.appendToColumn(fmt.Sprintf(`<img class="icons icons-scav%d">`, measure), "Lost", chartSCcolorLost, gameCount)
 			case "winner":
 				ChartGamesByScav.appendToColumn(fmt.Sprintf(`<img class="icons icons-scav%d">`, measure), "Won", chartSCcolorWon, gameCount)
+			default:
+				ChartGamesByScav.appendToColumn(fmt.Sprintf(`<img class="icons icons-scav%d">`, measure), "Draw", chartSCcolorNeutral, gameCount)
 			}
 			return nil
 		})
@@ -216,7 +224,7 @@ order by measure, usertype`, accountID)
 
 select usertype, measure, count(gid)
 from gg
-where usertype = any('{loser, winner, contender, fighter}') and playercount > 3
+where usertype = any('{loser, winner, contender}') and playercount > 3
 group by measure, usertype
 order by measure, usertype`, accountID)
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -233,6 +241,43 @@ order by measure, usertype`, accountID)
 				ChartGamesByAlliances.appendToColumn(fmt.Sprintf(`<img class="icons icons-alliance%d">`, templatesAllianceToClassI(measure)), "", chartSCcolorLost, gameCount)
 			case "winner":
 				ChartGamesByAlliances.appendToColumn(fmt.Sprintf(`<img class="icons icons-alliance%d">`, templatesAllianceToClassI(measure)), "", chartSCcolorWon, gameCount)
+			default:
+				ChartGamesByAlliances.appendToColumn(fmt.Sprintf(`<img class="icons icons-alliance%d">`, templatesAllianceToClassI(measure)), "", chartSCcolorNeutral, gameCount)
+			}
+			return nil
+		})
+		return err
+	}, func() error {
+		rows, err := dbpool.Query(r.Context(), `select p.usertype, rc.name as measure, count(g.id) as game_count
+from games as g
+left join games_rating_categories as grc on grc.game = g.id
+left join rating_categories as rc on rc.id = grc.category
+join players as p on p.game = g.id
+join identities as i on i.id = p.identity
+join accounts as a on a.id = i.account
+where a.id = $1 and p.usertype = any('{loser, winner, contender}')
+group by rc.name, p.usertype`, accountID)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		var gameCount int
+		var userType string
+		var measure *string
+		_, err = pgx.ForEachRow(rows, []any{&userType, &measure, &gameCount}, func() error {
+			mmeasure := "no category"
+			if measure != nil {
+				mmeasure = *measure
+			}
+			switch userType {
+			case "loser":
+				ChartGamesByCategory.appendToColumn(mmeasure, "", chartSCcolorLost, gameCount)
+			case "winner":
+				ChartGamesByCategory.appendToColumn(mmeasure, "", chartSCcolorWon, gameCount)
+			default:
+				ChartGamesByCategory.appendToColumn(mmeasure, "", chartSCcolorNeutral, gameCount)
 			}
 			return nil
 		})
@@ -252,6 +297,7 @@ order by measure, usertype`, accountID)
 		"ChartGamesByBaselevel":        ChartGamesByBaselevel.calcTotals(),
 		"ChartGamesByAlliances":        ChartGamesByAlliances.calcTotals(),
 		"ChartGamesByScav":             ChartGamesByScav.calcTotals(),
+		"ChartGamesByCategory":         ChartGamesByCategory.calcTotals(),
 		"ResearchClassificationTotal":  ResearchClassificationTotal,
 		"ResearchClassificationRecent": ResearchClassificationRecent,
 	})

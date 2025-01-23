@@ -1,13 +1,19 @@
 {{define "primitiveStackedChart"}}
 <div class="m-2 mx-4 charts-css-axistables" style="min-height: 250px">
-	<table class="charts-css column stacked show-heading show-10-secondary-axes show-labels show-primary-axis data-spacing-1" style="--color: #17fc;">
+	<style>
+	#primitive-chart-{{.ID}} {
+		--color: #17fc;
+		{{if $.LabelWidth}}--labels-size: {{$.LabelWidth}}{{end}}
+	}
+	</style>
+	<table id="primitive-chart-{{.ID}}" class="charts-css {{.Orientation}} stacked show-heading show-10-secondary-axes show-labels show-primary-axis data-spacing-1">
 		<caption class="text-nowrap">{{.Caption}}</caption>
 		<thead><tr>
 			<th scope="col">{{.AxisY}}</th>
 			<th scope="col">{{.AxisX}}</th>
 		</tr></thead>
 		<tbody>
-			{{range $k, $v := .Data}}<tr>
+			{{range $k, $v := .Data}}<tr style="width: {{$.Width}}">
 				<th scope="row">{{$v.Label}}</th>
 				{{range $kk, $vv := $v.Values}}
 				<td class="data" style="--size: {{divtf64 $vv.Value $.MaxValue}}; --color: {{$vv.Color}}"><span class="tooltip">{{$vv.Label}} {{$vv.Value}}</td>
