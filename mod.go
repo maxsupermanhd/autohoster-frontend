@@ -337,7 +337,7 @@ func modNamesHandler(w http.ResponseWriter, r *http.Request) {
 			clearName   string
 			displayName string
 		}{}
-		err := row.Scan()
+		err := row.Scan(&ret.clearName, &ret.displayName)
 		return ret, err
 	})
 	if DBErr(w, r, err) {
