@@ -274,7 +274,7 @@ func APIgetGames(_ http.ResponseWriter, r *http.Request) (int, any) {
 	if reqSearch != "" {
 		orderargs = []any{reqSearch}
 		argnum := len(whereargs) + 1
-		ordercase = fmt.Sprintf("ORDER BY rank () over (order by min(levenshtein(n.clear_name, $%d::text)) desc) desc, %s %s", argnum, reqSortField, reqSortOrder)
+		ordercase = fmt.Sprintf("ORDER BY rank () over (order by max(similarity(n.clear_name, $%d::text)) desc) desc, %s %s", argnum, reqSortField, reqSortOrder)
 	}
 
 	limiter := fmt.Sprintf("LIMIT %d", reqLimit)
