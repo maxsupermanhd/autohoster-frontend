@@ -4,7 +4,7 @@ function nameFormatter(value, row) {
 	let Account = row.Account !== undefined ? row.Account : row.AccountID;
 	let Identity = row.Identity !== undefined ? row.Identity : row.Identity;
 	let IdentityPubKey = row.IdentityPubKey;
-	console.log(row);
+	// console.log(row);
 	let DisplayNameClasses = '';
 	if(DisplayName == '') {
 		DisplayName = IdentityPubKey;
