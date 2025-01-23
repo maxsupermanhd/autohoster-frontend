@@ -324,7 +324,22 @@ func modNamesHandler(w http.ResponseWriter, r *http.Request) {
 		respondWithCodeAndPlaintext(w, 400, "Param is bad ("+status+")")
 		return
 	}
-	tag, err := dbpool.Exec(r.Context(), `update names set status = $1, note = $2 where id = $3`, status, note, nameID)
+	rows, err := dbpool.Query(context.Background(), `update names set status = $1, note = $2 where id = $3 returning clear_name, display_name`, status, note, nameID)
+	if DBErr(w, r, err) {
+		return
+	}
+	tag := rows.CommandTag()
+	rets, err := pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (struct {
+		clearName   string
+		displayName string
+	}, error) {
+		ret := struct {
+			clearName   string
+			displayName string
+		}{}
+		err := row.Scan()
+		return ret, err
+	})
 	if DBErr(w, r, err) {
 		return
 	}
@@ -333,7 +348,7 @@ func modNamesHandler(w http.ResponseWriter, r *http.Request) {
 		notifyErrorWebhook(fmt.Sprintf("%s\n%s", tag.String(), string(debug.Stack())))
 		return
 	}
-	modSendWebhook(fmt.Sprintf("Administrator `%s` `%s` name `%s` (note `%s`)", sessionGetUsername(r), status, nameID, note))
+	modSendWebhook(fmt.Sprintf("Administrator `%s` `%s` name `%s` `%s` (note `%s`)", sessionGetUsername(r), status, rets.clearName, rets.displayName, note))
 	basicLayoutLookupRespond("modNames", w, r, nil)
 }
 
