@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
 	"log"
@@ -296,7 +297,9 @@ func recoverPasswordHandler(w http.ResponseWriter, r *http.Request) {
 			err := dbpool.QueryRow(r.Context(), "SELECT terminated FROM accounts WHERE email = $1 AND coalesce(extract(epoch from email_confirmed), 0) != 0", r.PostFormValue("email")).Scan(&reqTerminated)
 			if err != nil {
 				basicLayoutLookupRespond("recoveryRequest", w, r, map[string]any{"RecoverError": true})
-				notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+				if !errors.Is(err, pgx.ErrNoRows) {
+					notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+				}
 				return
 			}
 			if reqTerminated {
