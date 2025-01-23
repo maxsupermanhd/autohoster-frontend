@@ -3,6 +3,8 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"os"
@@ -75,6 +77,21 @@ func lobbyLookup() (ret LobbyResponsePretty) {
 func lobbyPoller() {
 	lobbyHistory := []LobbyRoomPretty{}
 	previousLookup := []LobbyRoomPretty{}
+	lobbyHistoryKeepPath := cfg.GetDString("", "lobbyHistoryPath")
+	if lobbyHistoryKeepPath != "" {
+		saveHistoryBytes, err := os.ReadFile(lobbyHistoryKeepPath)
+		if err == nil {
+			err = json.Unmarshal(saveHistoryBytes, &lobbyHistory)
+			if err != nil {
+				log.Println("error unmarshling history ", err)
+			}
+		} else {
+			if !errors.Is(err, os.ErrNotExist) && !errors.Is(err, os.ErrPermission) {
+				log.Println("error reading history", err)
+			}
+		}
+		log.Println("restored lobby history")
+	}
 	for {
 		lookup := lobbyLookup()
 		for _, vv := range previousLookup {
@@ -92,6 +109,17 @@ func lobbyPoller() {
 		}
 		if len(lobbyHistory) > lobbyHistoryMax {
 			lobbyHistory = lobbyHistory[:lobbyHistoryMax]
+		}
+		if lobbyHistoryKeepPath != "" {
+			saveHistoryBytes, err := json.MarshalIndent(lobbyHistory, "", "\t")
+			if err != nil {
+				log.Println("failed to marshal lobby history", err)
+			} else {
+				err = os.WriteFile(lobbyHistoryKeepPath, saveHistoryBytes, 0644)
+				if err != nil {
+					log.Println("failed to save lobby history", err)
+				}
+			}
 		}
 		previousLookup = lookup.prettyRooms
 		LobbyWSHub.clientsLock.Lock()
