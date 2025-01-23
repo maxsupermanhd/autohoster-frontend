@@ -14,16 +14,18 @@ import (
 )
 
 type RatingCategory struct {
-	ID         int
-	TimeStarts **time.Time
-	TimeEnds   **time.Time
-	Name       string
-	Variant    string
+	ID           int
+	TimeStarts   *time.Time
+	TimeEnds     *time.Time
+	Name         string
+	Variant      string
+	Description  string
+	SortingValue int
 }
 
 func GetRatingCategories(ctx context.Context, db *pgxpool.Pool) ([]*RatingCategory, error) {
 	r := []*RatingCategory{}
-	return r, pgxscan.Select(ctx, db, &r, `SELECT * FROM rating_categories`)
+	return r, pgxscan.Select(ctx, db, &r, `SELECT * FROM rating_categories ORDER BY sorting_value desc`)
 }
 
 func GetRatingCategory(ctx context.Context, db *pgxpool.Pool, id int) (*RatingCategory, error) {
@@ -39,11 +41,11 @@ func GetRatingCategory(ctx context.Context, db *pgxpool.Pool, id int) (*RatingCa
 }
 
 type LeaderboardEntry struct {
-	Name     string `db:"display_name"`
-	Account  int
-	Category int            `json:"-"`
-	Variant  string         `json:"-"`
-	Rating   map[string]any `db:"data"`
+	DisplayName string `db:"display_name"`
+	Account     int
+	Category    int            `json:"-"`
+	Variant     string         `json:"-"`
+	Rating      map[string]any `db:"data"`
 }
 
 func GetLeaderboardTop(ctx context.Context, db *pgxpool.Pool, category int, limit int) ([]*LeaderboardEntry, error) {

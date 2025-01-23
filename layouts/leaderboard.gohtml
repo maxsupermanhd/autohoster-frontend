@@ -19,9 +19,10 @@
 				<tbody>
 				{{range $rc, $lb := .leaderboards}}
 					<tr>
-						<td>({{$rc.ID}}) {{$rc.DisplayName}}<br>
-							Time starts: {{$rc.TimeStarts}}<br>
-							Time ends: {{$rc.TimeEnds}}<br>
+						<td>({{$rc.ID}}) {{$rc.Name}}<br>
+							{{if $rc.TimeStarts}}Time starts: {{$rc.TimeStarts}}<br>{{end}}
+							{{if $rc.TimeEnds}}Time ends: {{$rc.TimeEnds}}<br>{{end}}
+							{{if $rc.Description}}Description: {{$rc.Description}}<br>{{end}}
 							<a class="btn btn-primary" href="/leaderboards/{{$rc.ID}}">View leaderboard</a>
 							{{/* <a class="btn btn-primary" href="/games?category={{$rc.ID}}">View games</a> */}}
 						</td>
