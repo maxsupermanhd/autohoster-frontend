@@ -186,7 +186,7 @@ func APIgetGraphData(_ http.ResponseWriter, r *http.Request) (int, any) {
 			v["replayPacketsP60t"] = []int{}
 		}
 
-		val := []int{}
+		val := []float64{}
 		v["labActivityP60t"] = val
 		if i == 0 {
 			continue
@@ -224,7 +224,7 @@ func APIgetGraphData(_ http.ResponseWriter, r *http.Request) (int, any) {
 			if !ok {
 				continue
 			}
-			navg := int(0)
+			navg := float64(0)
 			if pot > 1 && prf > 1 && prevPrf > 1 && prevPot > 1 {
 				avg[p] -= avg[p] / avgw
 				nval := (prf - prevPrf) / (pot - prevPot)
@@ -232,7 +232,7 @@ func APIgetGraphData(_ http.ResponseWriter, r *http.Request) (int, any) {
 					nval = 0
 				}
 				avg[p] += (100 * nval) / avgw
-				navg = int(avg[p])
+				navg = float64(avg[p])
 			}
 			val = append(val, navg)
 		}
