@@ -364,10 +364,6 @@ func modResendEmailConfirm(accountID int) error {
 	return sendgridConfirmcode(email, emailcode)
 }
 
-// func modIdentitiesHandler(w http.ResponseWriter, r *http.Request) {
-
-// }
-
 func modReloadConfig(w http.ResponseWriter, r *http.Request) {
 	err := cfg.SetFromFileJSON("config.json")
 	w.WriteHeader(200)
@@ -399,4 +395,29 @@ func APImodInstances(w http.ResponseWriter, r *http.Request) (int, any) {
 		ii = append(ii, v)
 	}
 	return 200, ii
+}
+
+func modDebugInstanceToGame(w http.ResponseWriter, r *http.Request) {
+	inputtedInstanceIDString := r.URL.Query().Get("instID")
+	inst, err := strconv.Atoi(inputtedInstanceIDString)
+	if err != nil {
+		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": err.Error()})
+		return
+	}
+	var gameID *time.Time
+	err = dbpool.QueryRow(r.Context(), `select time_started from games where instance = $1`, inst).Scan(&gameID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "game of that instance not found"})
+		return
+	}
+	if DBErr(w, r, err) {
+		return
+	}
+	gameIDBytes, err := gameID.MarshalText()
+	if err != nil {
+		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": err.Error()})
+		return
+	}
+	w.Header().Add("Location", "/games/"+string(gameIDBytes))
+	w.WriteHeader(http.StatusTemporaryRedirect)
 }

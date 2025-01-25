@@ -322,11 +322,14 @@ func main() {
 
 	router.HandleFunc("/moderation/identities", basicSuperadminHandler("modIdentities")).Methods("GET")
 	// router.HandleFunc("/moderation/identities", modIdentitiesHandler).Methods("POST")
-	router.HandleFunc("/api/identities", APIcall(APIgetIdentities)).Methods("GET", "OPTIONS")
+	router.HandleFunc("/api/identities", APIcall(APISuperadminCheck(APIgetIdentities))).Methods("GET", "OPTIONS")
 
 	router.HandleFunc("/moderation/names", basicSuperadminHandler("modNames")).Methods("GET")
 	router.HandleFunc("/moderation/names", SuperadminCheck(modNamesHandler)).Methods("POST")
-	router.HandleFunc("/api/names", APIcall(APIgetNames)).Methods("GET", "OPTIONS")
+	router.HandleFunc("/api/names", APIcall(APISuperadminCheck(APIgetNames))).Methods("GET", "OPTIONS")
+
+	router.HandleFunc("/moderation/debug", basicSuperadminHandler("modDebug")).Methods("GET")
+	router.HandleFunc("/moderation/debug/instanceToGame", SuperadminCheck(modDebugInstanceToGame)).Methods("GET")
 
 	// router.HandleFunc("/moderation/ratingCategories", basicSuperadminHandler("modRatingCategories")).Methods("GET")
 	// router.HandleFunc("/api/ratingCategories", APIcall(APIgetRatingCategories)).Methods("GET", "OPTIONS")

@@ -748,3 +748,27 @@
 	</body>
 </html>
 {{end}}
+{{define "modDebug"}}
+<!doctype html>
+<html translate="no">
+	<head>
+		{{template "head"}}
+		<title>Mod debug</title>
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css" integrity="sha512-ZnR2wlLbSbr8/c9AgLg3jQPAattCUImNsae6NHYnS9KrIwRdcY9DxFotXhNAKIKbAXlRnujIqUWoXXwqyFOeIQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+	</head>
+	<body>
+		{{template "NavPanel" . }}
+		<div class="container px-4 py">
+			<p>
+				<h5>Instance to game</h5>
+				<form action="debug/instanceToGame">
+				<input name="instID">
+				<input type="submit">
+				</form>
+			</p>
+		</div>
+	</body>
+</html>
+{{end}}
+
