@@ -328,7 +328,6 @@ func modNamesHandler(w http.ResponseWriter, r *http.Request) {
 	if DBErr(w, r, err) {
 		return
 	}
-	tag := rows.CommandTag()
 	rets, err := pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (struct {
 		clearName   string
 		displayName string
@@ -341,11 +340,6 @@ func modNamesHandler(w http.ResponseWriter, r *http.Request) {
 		return ret, err
 	})
 	if DBErr(w, r, err) {
-		return
-	}
-	if !tag.Update() || tag.RowsAffected() != 1 {
-		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-		notifyErrorWebhook(fmt.Sprintf("%s\n%s", tag.String(), string(debug.Stack())))
 		return
 	}
 	modSendWebhook(fmt.Sprintf("Administrator `%s` `%s` name `%s` `%s` (note `%s`)", sessionGetUsername(r), status, rets.clearName, rets.displayName, note))
