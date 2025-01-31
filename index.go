@@ -105,8 +105,8 @@ where g.time_started > now()-$1::interval`, timeInterval).Scan(&uniqPlayers)
 	to_char(date_trunc('day', g.time_started), 'YYYY-MM-DD') as d,
 	count(g.time_started) as c,
 	round(avg(count(g.time_started)) over(order by date_trunc('day', g.time_started) rows between 6 preceding and current row)),
-	count(g.time_started) - sum(case when gc.category = 5 or gc.category = 7 then 1 else 0 end) as nb,
-	round(avg(count(g.time_started) - sum(case when gc.category = 5 or gc.category = 7 then 1 else 0 end)) over(order by date_trunc('day', g.time_started) rows between 6 preceding and current row))
+	count(g.time_started) - sum(case when gc.category = 5 or gc.category = 7 or gc.category = 8 then 1 else 0 end) as nb,
+	round(avg(count(g.time_started) - sum(case when gc.category = 5 or gc.category = 7 or gc.category = 8 then 1 else 0 end)) over(order by date_trunc('day', g.time_started) rows between 6 preceding and current row))
 FROM games as g
 LEFT JOIN games_rating_categories as gc on gc.game = g.id
 WHERE g.time_started > now() - '1 year 7 days'::interval
