@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v5"
@@ -51,7 +50,15 @@ func ratingHandler(w http.ResponseWriter, r *http.Request) {
 
 func ratingLookup(hash string, gameVersion string) Ra {
 	m := Ra{
+		Dummy:                 false,
+		Autohoster:            false,
 		Star:                  [3]int{},
+		Medal:                 0,
+		Level:                 0,
+		Elo:                   "",
+		Details:               "",
+		Name:                  "",
+		Tag:                   "",
 		NameTextColorOverride: [3]int{0xff, 0xff, 0xff},
 		TagTextColorOverride:  [3]int{0xff, 0xff, 0xff},
 		EloTextColorOverride:  [3]int{0xff, 0xff, 0xff},
@@ -71,10 +78,18 @@ func ratingLookup(hash string, gameVersion string) Ra {
 		m.Elo = "Visit wz2100-autohost.net"
 		return m
 	}
+	if hash == "21494390542d3bb20bb39c0986c2c6d9a338be2db3f68b47610744be6b2045f2" {
+		m.Autohoster = false
+		m.Details = "Used to be CleptoMantis but now he is fake Autohoster"
+		m.Elo = "Fake autohoster"
+		m.NameTextColorOverride = [3]int{0x00, 0x00, 0x00}
+		m.EloTextColorOverride = [3]int{0xff, 0x00, 0x00}
+		return m
+	}
 
 	var lid int
 	var lacc *int
-	var lnames []string
+	var lname string
 	var lmod, lterm, ladmin bool
 
 	var lwinsZ *int
@@ -86,11 +101,7 @@ func ratingLookup(hash string, gameVersion string) Ra {
 with
 	s1 as (select identities.id as lid,
 				identities.account as lacc,
-				(select array_agg(display_name)
-				from (select names.display_name
-						from names
-						where account = accounts.id
-						order by rank () over (order by names.id = accounts.name desc))) as lnames,
+				coalesce(accounts.display_name, 'noname') as lname,
 				coalesce(accounts.allow_host_request, false) as lmod,
 				coalesce(accounts.terminated, false) as lterm,
 				coalesce(accounts.superadmin, false) as ladmin
@@ -111,11 +122,11 @@ with
 				rating.account as racc
 			from rating, s1
 			where rating.account = s1.lacc and rating.category = 2)
-select lid, lacc, lnames, lmod, lterm, ladmin, lwins, r
+select lid, lacc, lname, lmod, lterm, ladmin, lwins, r
 from s1
 left join s2 on s1.lid = s2.s2lid
 left join s3 on s1.lacc = s3.racc`, hash).Scan(
-		&lid, &lacc, &lnames, &lmod, &lterm, &ladmin,
+		&lid, &lacc, &lname, &lmod, &lterm, &ladmin,
 		&lwinsZ,
 		&lrating,
 	)
@@ -145,8 +156,8 @@ left join s3 on s1.lacc = s3.racc`, hash).Scan(
 		return m
 	}
 
-	if len(lnames) > 0 {
-		m.Name = lnames[0]
+	if gameVersion != "" {
+		m.Name = lname
 	}
 
 	if lterm {
@@ -154,27 +165,46 @@ left join s3 on s1.lacc = s3.racc`, hash).Scan(
 		m.NameTextColorOverride = [3]int{0xff, 0x22, 0x22}
 		m.EloTextColorOverride = [3]int{0xff, 0x22, 0x22}
 		m.TagTextColorOverride = [3]int{0xff, 0x22, 0x22}
-		m.Tag = ""
+		if gameVersion != "" {
+			m.Tag = ""
+		} else {
+			m.Name = ""
+		}
 		m.Elo = "Account terminated"
 		return m
 	}
-	m.NameTextColorOverride = [3]int{0xff, 0xff, 0xff}
+
+	if lmod {
+		m.Level = 7
+		if gameVersion != "" {
+			m.TagTextColorOverride = [3]int{0x11, 0xaa, 0x11}
+			m.Tag = "Moderator"
+		} else {
+			m.NameTextColorOverride = [3]int{0x11, 0xaa, 0x11}
+			m.Name = "Moderator"
+		}
+	}
 	if ladmin {
 		m.Level = 8
-		m.NameTextColorOverride = [3]int{0x33, 0xff, 0x33}
-	} else if lmod {
-		m.Level = 7
-		m.NameTextColorOverride = [3]int{0x11, 0xaa, 0x11}
+		if gameVersion != "" {
+			m.Tag = "Admin"
+			m.TagTextColorOverride = [3]int{0x33, 0xff, 0x33}
+		} else {
+			m.NameTextColorOverride = [3]int{0x33, 0xff, 0x33}
+			m.Name = "Admin"
+		}
 	}
 
-	ratingtype, _ := lrating["t"].(string)
-	switch ratingtype {
-	default:
+	ratingtype, ok := lrating["t"].(string)
+	if !ok {
 		m.Details = "Not participated in rated games\n"
 		m.EloTextColorOverride = [3]int{0xbb, 0xbb, 0xbb}
 		m.Elo = fmt.Sprintf("Not rated (% 4d wins)", lwins)
+		return m
+	}
+	m.Details += fmt.Sprintf("Showing rating type %s\n", ratingtype)
+	switch ratingtype {
 	case "elo":
-		m.Details += fmt.Sprintf("Showing rating type %s\n", ratingtype)
 		m.Details += "Showing rating category 3\n"
 
 		relo := int(lrating["elo"].(float64))
@@ -229,11 +259,6 @@ left join s3 on s1.lacc = s3.racc`, hash).Scan(
 				m.Star[2] = 3
 			}
 		}
-	}
-
-	if len(lnames) > 1 {
-		m.Details += "Also known as:\n"
-		m.Details += strings.Join(lnames[1:], ", ")
 	}
 
 	return m
