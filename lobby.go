@@ -21,32 +21,36 @@ const (
 )
 
 type LobbyRoomPretty struct {
-	GameID         uint32
-	GameName       string
-	MapName        string
-	HostName       string
-	Version        string
-	Private        bool
-	Pure           bool
-	MaxPlayers     uint32
-	CurrentPlayers uint32
-	LastSeen       int64
-	History        bool
+	GameID            uint32
+	GameName          string
+	MapName           string
+	HostName          string
+	Version           string
+	Private           bool
+	Pure              bool
+	MaxPlayers        uint32
+	CurrentPlayers    uint32
+	MaxSpectators     int
+	CurrentSpectators int
+	LastSeen          int64
+	History           bool
 }
 
 func lobbyRoomPrettyfy(room lobby.LobbyRoom) LobbyRoomPretty {
 	return LobbyRoomPretty{
-		room.GameID,
-		string(room.GameName[:bytes.IndexByte(room.GameName[:], 0)]),
-		string(room.MapName[:bytes.IndexByte(room.MapName[:], 0)]),
-		string(room.HostName[:bytes.IndexByte(room.HostName[:], 0)]),
-		string(room.Version[:bytes.IndexByte(room.Version[:], 0)]),
-		btoi(room.Private),
-		btoi(room.Pure),
-		room.MaxPlayers,
-		room.CurrentPlayers,
-		time.Now().Unix(),
-		false,
+		GameID:            room.GameID,
+		GameName:          string(room.GameName[:bytes.IndexByte(room.GameName[:], 0)]),
+		MapName:           string(room.MapName[:bytes.IndexByte(room.MapName[:], 0)]),
+		HostName:          string(room.HostName[:bytes.IndexByte(room.HostName[:], 0)]),
+		Version:           string(room.Version[:bytes.IndexByte(room.Version[:], 0)]),
+		Private:           btoi(room.Private),
+		Pure:              btoi(room.Pure),
+		MaxPlayers:        room.MaxPlayers,
+		CurrentPlayers:    room.CurrentPlayers,
+		MaxSpectators:     int(room.DWFlags[1] & 0xFFFF),
+		CurrentSpectators: int(room.DWFlags[1] >> 16),
+		LastSeen:          time.Now().Unix(),
+		History:           false,
 	}
 }
 
