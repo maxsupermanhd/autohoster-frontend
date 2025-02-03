@@ -167,7 +167,7 @@
 					r.children[7].innerText = (e.Private?"Private ":"")+(e.Pure?"Map-mod ":"")
 					if(e.History) {
 						r.style.color = "gray";
-						r.children[6].innerText += " " + timeAgo(new Date(e.LastSeen*1000))
+						r.children[7].innerText += " " + timeAgo(new Date(e.LastSeen*1000))
 					} else {
 						r.style.color = "";
 					}
