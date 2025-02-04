@@ -167,6 +167,8 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		requpass := hashPassword(r.PostFormValue("password"))
 		reqemail := r.PostFormValue("email")
 		reqemailcode := generateRandomString(50)
+		dbRegisterLock.Lock()
+		defer dbRegisterLock.Unlock()
 
 		log.Printf("Register attempt: [%s] [%s]", requname, reqemail)
 
