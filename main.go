@@ -91,13 +91,14 @@ func sessionAppendUser(r *http.Request, a map[string]any) map[string]any {
 	return a
 }
 
-func robotsHandler(w http.ResponseWriter, _ *http.Request) {
-	fmt.Fprint(w, "User-agent: *\nDisallow: /\n\n\n")
+func robotsHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "./static/robots.txt")
 }
 func faviconHandler(w http.ResponseWriter, r *http.Request) {
 	n := time.Now().Add(-7 * 24 * time.Hour)
 	if n.Year() != n.Add(14*24*time.Hour).Year() {
 		http.ServeFile(w, r, "./static/favicon-newyear.ico")
+		return
 	}
 	http.ServeFile(w, r, "./static/favicon.ico")
 }
