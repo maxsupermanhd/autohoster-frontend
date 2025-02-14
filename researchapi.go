@@ -45,7 +45,7 @@ func APIgetResearchSummary(w http.ResponseWriter, r *http.Request) (int, any) {
 	var players []Player
 	var settingAlliance int
 	err := dbpool.QueryRow(context.Background(), `SELECT
-	coalesce(research_log, '[]')::jsonb,
+	research_log,
 	json_agg(json_build_object(
 		'Position', p.position,
 		'Team', p.team,
@@ -65,7 +65,7 @@ JOIN players as p on g.id = p.game
 JOIN identities as i on p.identity = i.id
 LEFT JOIN accounts as a on a.id = i.account
 LEFT JOIN names as n on n.id = a.name
-WHERE g.id = $1
+WHERE g.id = $1 and research_log is not null
 GROUP BY 1, 3`, gid).Scan(&researchLog, &players, &settingAlliance)
 	if err != nil {
 		if err == pgx.ErrNoRows {
