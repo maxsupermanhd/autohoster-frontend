@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /api/
 
 Sitemap: https://wz2100-autohost.net/static/sitemap.txt
