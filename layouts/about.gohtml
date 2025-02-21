@@ -81,6 +81,9 @@
 				{{range $mapName, $mapHash := $queueDef.Maps}}
 				<a href="https://maps.wz2100.net/#/map/hash/{{$mapHash}}">{{$mapName}}</a>
 				{{end}}
+				{{if ne $queueDef.Reroll 0}}
+				(Idle reroll {{$queueDef.Reroll}} minutes)
+				{{end}}
 			</li>
 			{{end}}
 			{{end}}

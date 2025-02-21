@@ -13,6 +13,7 @@ import (
 type backendConfiguredQueue struct {
 	RoomName string
 	Maps     map[string]string
+	Reroll   int
 }
 
 func aboutHandler(w http.ResponseWriter, r *http.Request) {
@@ -77,6 +78,7 @@ func fetchBackendQueues() (ret map[string]backendConfiguredQueue) {
 		ret[qdn] = backendConfiguredQueue{
 			RoomName: qrn,
 			Maps:     m,
+			Reroll:   c.GetDInt(0, "queues", qn, "idleRerollMinutes"),
 		}
 	}
 	return
