@@ -94,6 +94,9 @@ func sessionAppendUser(r *http.Request, a map[string]any) map[string]any {
 func robotsHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "./static/robots.txt")
 }
+func securityHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "./static/security.txt")
+}
 func faviconHandler(w http.ResponseWriter, r *http.Request) {
 	n := time.Now().Add(-7 * 24 * time.Hour)
 	if n.Year() != n.Add(14*24*time.Hour).Year() {
@@ -277,6 +280,8 @@ func main() {
 	router.PathPrefix("/static").Handler(http.StripPrefix("/static/", shouldCache(604800, http.FileServer(http.Dir("./static")))))
 	router.HandleFunc("/favicon.ico", faviconHandler)
 	router.HandleFunc("/robots.txt", robotsHandler)
+	router.HandleFunc("/security.txt", securityHandler)
+	router.HandleFunc("/.well-known/security.txt", securityHandler)
 	router.HandleFunc("/", indexHandler)
 
 	router.HandleFunc("/legal", basicLayoutHandler("legal"))

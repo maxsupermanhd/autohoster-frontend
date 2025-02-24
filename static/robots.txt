@@ -1,5 +1,7 @@
 User-agent: *
-Allow: /
-Disallow: /api/
-
+Disallow: /
+Allow: /about
+Allow: /lobby
+Allow: /rules
+Crawl-delay: 0
 Sitemap: https://wz2100-autohost.net/static/sitemap.txt
