@@ -16,7 +16,7 @@ import (
 func PlayersHandler(w http.ResponseWriter, r *http.Request) {
 	urlID := mux.Vars(r)["id"]
 	var accountID int
-	err := dbpool.QueryRow(r.Context(), `select account from names where clear_name = $1 and status = 'approved';`, urlID).Scan(&accountID)
+	err := dbpool.QueryRow(r.Context(), `select account from names where lower(clear_name) = lower($1) and status = 'approved';`, urlID).Scan(&accountID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		identSpecifier, err := hex.DecodeString(urlID)
 		if err != nil {
