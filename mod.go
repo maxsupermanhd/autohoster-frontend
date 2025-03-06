@@ -84,7 +84,7 @@ func APIgetAccounts2(_ http.ResponseWriter, r *http.Request) (int, any) {
 		sortColumns:             []string{"id", "account_created"},
 		filterColumnsFull:       []string{"id"},
 		filterColumnsStartsWith: []string{"username", "email", "display_name"},
-		searchColumn:            "username || email || display_name",
+		searchColumn:            "username",
 		searchSimilarity:        0.3,
 		columnMappings: map[string]string{
 			"id":              "id",
