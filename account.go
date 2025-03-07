@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"runtime/debug"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -163,9 +164,9 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 			basicLayoutLookupRespond("register", w, r, map[string]any{"RegisterErrorMsg": "Email is not valid", "LastAttempt": la})
 			return
 		}
-		requname := r.PostFormValue("username")
-		requpass := hashPassword(r.PostFormValue("password"))
-		reqemail := r.PostFormValue("email")
+		requname := strings.TrimSpace(r.PostFormValue("username"))
+		requpass := hashPassword(strings.TrimSpace(r.PostFormValue("password")))
+		reqemail := strings.TrimSpace(r.PostFormValue("email"))
 		reqemailcode := generateRandomString(50)
 		dbRegisterLock.Lock()
 		defer dbRegisterLock.Unlock()
