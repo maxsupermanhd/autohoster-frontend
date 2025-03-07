@@ -18,11 +18,7 @@ func PlayersHandler(w http.ResponseWriter, r *http.Request) {
 	var accountID int
 	err := dbpool.QueryRow(r.Context(), `select account from names where lower(clear_name) = lower($1) and status = 'approved';`, urlID).Scan(&accountID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		identSpecifier, err := hex.DecodeString(urlID)
-		if err != nil {
-			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msg": "Incorrectly formatted identity key or hash (please ensure it has even number of characters when specifying beginning of sha256 hash of public key)"})
-			return
-		}
+		identSpecifier, _ := hex.DecodeString(urlID)
 		PlayersIdentityHandler(w, r, identSpecifier)
 		return
 	}
