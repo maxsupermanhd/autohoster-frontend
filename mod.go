@@ -76,6 +76,7 @@ func APIgetAccounts2(_ http.ResponseWriter, r *http.Request) (int, any) {
 		LastReport       *time.Time `json:"last_report"`
 		LastRequest      *time.Time `json:"last_request"`
 		Identities       string     `json:"identities"`
+		Names            string     `json:"names"`
 	}](r, genericRequestParams{
 		tableName:               "accounts_view",
 		limitClamp:              1500,
