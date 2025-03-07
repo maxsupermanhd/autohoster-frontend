@@ -67,7 +67,9 @@
 		<div class="px-4 py-5 my-5">
 			<div class="alert alert-danger text-center" role="alert">
 				{{if eq .ForbiddenReason "0"}}
-				Sorry, Autohoster access must be approved first. Contact Administrator.
+				<p>Only Moderators can request rooms in Autohoster.</p>
+				<p>View your Moderator role status <a href="/account">here<a>.</p>
+				<p>To apply for Moderator role you must reach to Autohoster administration after completing all requirements.<p>
 				{{else}}
 				<h4>Access denied.</h4>
 				<h5>We detected Autohoster activity that is not welcome in Warzone 2100 community and restricted

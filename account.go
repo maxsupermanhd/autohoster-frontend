@@ -345,3 +345,52 @@ func recoverPasswordHandler(w http.ResponseWriter, r *http.Request) {
 		basicLayoutLookupRespond("passwordReset", w, r, map[string]any{"RecoveryCode": keys[0]})
 	}
 }
+
+func accountHandler(w http.ResponseWriter, r *http.Request) {
+	var allow_host_request bool
+	err := dbpool.QueryRow(r.Context(), `select allow_host_request from accounts where username = $1`, sessionGetUsername(r)).Scan(&allow_host_request)
+	if DBErr(w, r, err) {
+		return
+	}
+
+	var game_count int
+	err = dbpool.QueryRow(r.Context(), `select
+	count(*) filter (where g.calculated and not g.deleted and coalesce(rc.is_pve, false) = false)
+from players p
+join games g on g.id = p.game
+left join games_rating_categories grc on grc.game = g.id
+left join rating_categories rc on rc.id = grc.category
+join identities i on i.id = p.identity
+join accounts a on a.id = i.account
+where a.username = $1`, sessionGetUsername(r)).Scan(&game_count)
+	if DBErr(w, r, err) {
+		return
+	}
+
+	var selected_name *string
+	err = dbpool.QueryRow(r.Context(), `select n.display_name
+from names as n
+join accounts as a on a.name = n.id
+where a.username = $1`, sessionGetUsername(r)).Scan(&selected_name)
+	if !errors.Is(err, pgx.ErrNoRows) {
+		if DBErr(w, r, err) {
+			return
+		}
+	}
+
+	var identities_count int
+	err = dbpool.QueryRow(r.Context(), `select count(*) filter (where i.pkey is not null)
+from identities i
+join accounts a on a.id = i.account
+where a.username = $1`, sessionGetUsername(r)).Scan(&identities_count)
+	if DBErr(w, r, err) {
+		return
+	}
+
+	basicLayoutLookupRespond("accountSettings", w, r, map[string]any{
+		"ModeratorStatus": allow_host_request,
+		"GameCount":       game_count,
+		"SelectedName":    selected_name,
+		"IdentitiesCount": identities_count,
+	})
+}

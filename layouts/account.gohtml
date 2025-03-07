@@ -9,46 +9,52 @@
 		{{template "NavPanel" . }}
 		<div class="px-4 py-5 my-5 text-center">
 			{{if .UserAuthorized}}
-			<div class="container" style="max-width: 540px;">
-				<div class="card mb-3">
-					<div class="card-header">
-						User {{.User.Id}}
-					</div>
-					<div class="card-body">
-						{{/* <div class="row">
-							<div class="col-sm-4"><h6 class="mb-0">Full Name</h6></div>
-							<div class="col-sm-8">{{ .User.Fname }} {{ .User.Lname }}</div>
-						</div><hr> */}}
-						<div class="row">
-							<div class="col-sm-4"><h6 class="mb-0">Email</h6></div>
-							<div class="col-sm-8">
-								{{ .User.Email }}
-								{{if ne .User.Econf "0"}}
-									(confirmed)
-								{{end}}
-							</div>
-						</div><hr>
-						<div class="row">
-							<div class="col-sm-4"><h6 class="mb-0">Username</h6></div>
-							<div class="col-sm-8">{{ .User.Username }}</div>
-						</div><hr>
-						{{/* <div class="row">
-							<div class="col-sm-4"><h6 class="mb-0">Discord</h6></div>
-							<div class="col-sm-8">
-								{{if .Uesr.Discord.DiscordError}}
-									{{.Uesr.Discord.DiscordError}}
-								{{end}}
-								{{if .User.Discord.Token}}
-									<img class="discord-avatar-30" src="https://cdn.discordapp.com/avatars/{{.User.Discord.Data.id}}/{{.User.Discord.Data.avatar}}.png">
-									{{.User.Discord.Data.username}}#{{.User.Discord.Data.discriminator}}
-								{{else}}
-									<a href="{{.User.Discord.AuthUrl}}">Link</a>
-								{{end}}
-							</div>
-						</div> */}}
-					</div>
+			<div class="container" style="max-width: 540px;"><div class="card mb-3">
+				<div class="card-header">
+					User {{.User.Id}}
 				</div>
-			</div>
+				<div class="card-body">
+					<div class="row">
+						<div class="col-sm-4"><h6 class="mb-0">Email</h6></div>
+						<div class="col-sm-8">
+							{{ .User.Email }}
+							{{if ne .User.Econf "0"}}
+								(confirmed)
+							{{end}}
+						</div>
+					</div><hr>
+					<div class="row">
+						<div class="col-sm-4"><h6 class="mb-0">Username</h6></div>
+						<div class="col-sm-8">{{ .User.Username }}</div>
+					</div>
+					
+				</div>
+			</div><div class="card mb-3">
+				<div class="card-header">
+					Moderator role: {{if .ModeratorStatus}}<div class="text-success">approved</div>{{else}}<div class="text-danger">needs approval</div>{{end}}
+				</div><div class="card-body">
+					<div class="row">
+						<div class="col"><h6 class="mb-0">Email confirmed</h6></div>
+						<div class="col"></div>
+						<div class="col">{{if ne .User.Econf "0"}}✅{{else}}❌{{end}}</div>
+					</div><hr>
+					<div class="row">
+						<div class="col"><h6 class="mb-0">Game count<br>(excl. pve)</h6></div>
+						<div class="col">{{ .GameCount }}</div>
+						<div class="col">{{if ge .GameCount 50}}✅{{else}}❌<br>(need 50 or more){{end}}</div>
+					</div><hr>
+					<div class="row">
+						<div class="col"><h6 class="mb-0">Multiplayer name</h6></div>
+						<div class="col">{{if .SelectedName}}<div class="text-success">{{.SelectedName}}</div>{{else}}<div class="text-danger">No name selected<br><a href="/names">Select</a></div>{{end}}</div>
+						<div class="col">{{if .SelectedName}}✅{{else}}❌{{end}}</div>
+					</div><hr>
+					<div class="row">
+						<div class="col"><h6 class="mb-0">Identities linked</h6></div>
+						<div class="col">{{if gt .IdentitiesCount 0}}<div class="text-success">{{.IdentitiesCount}} identities</div>{{else}}<div class="text-danger">No identities linked<br><a href="/wzlink">Link</a></div>{{end}}</div>
+						<div class="col">{{if gt .IdentitiesCount 0}}✅{{else}}❌{{end}}</div>
+					</div>
+				<div>
+			<div></div>
 			{{else}}
 			<h3>Not Authorized</h3>
 			<a href="/login" class="btn btn-primary">Log in</a>
