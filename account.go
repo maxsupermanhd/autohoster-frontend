@@ -165,7 +165,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		requname := strings.TrimSpace(r.PostFormValue("username"))
-		requpass := hashPassword(strings.TrimSpace(r.PostFormValue("password")))
+		requpass := hashPassword(r.PostFormValue("password"))
 		reqemail := strings.TrimSpace(r.PostFormValue("email"))
 		reqemailcode := generateRandomString(50)
 		dbRegisterLock.Lock()
