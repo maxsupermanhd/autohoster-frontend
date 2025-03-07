@@ -146,7 +146,7 @@ func namePickHandler(w http.ResponseWriter, r *http.Request) {
 
 	if !and.hasClearName(subClearName) {
 		var numClearNames int
-		if DBErr(w, r, dbpool.QueryRow(r.Context(), `select count(*) from names where lower(clear_name) = lower($1)`, subClearName).Scan(&numClearNames)) {
+		if DBErr(w, r, dbpool.QueryRow(r.Context(), `select count(*) from names where lower(clear_name) = lower($1) and status != 'denied'`, subClearName).Scan(&numClearNames)) {
 			return
 		}
 		if numClearNames != 0 {
@@ -161,7 +161,7 @@ func namePickHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var numDisplayNames int
-	if DBErr(w, r, dbpool.QueryRow(r.Context(), `select count(*) from names where display_name = $1`, subDisplayName).Scan(&numDisplayNames)) {
+	if DBErr(w, r, dbpool.QueryRow(r.Context(), `select count(*) from names where display_name = $1 and status != 'denied'`, subDisplayName).Scan(&numDisplayNames)) {
 		return
 	}
 	if numDisplayNames != 0 {
