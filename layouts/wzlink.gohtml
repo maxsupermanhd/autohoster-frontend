@@ -16,7 +16,12 @@
 			Hash: {{$v.Hash}}<br>
 			Public key: {{if $v.Pkey}}{{base64encode $v.Pkey}}{{else}}Not known!{{end}}</p>
 			{{end}}
+			{{if ne .User.Econf "0"}}
+			<p><a class="btn btn-primary disabled">Link identity</a></p>
+			<p>You have to confirm your email address in order to link an identity.</p>
+			{{else}}
 			<p><a href="/wzlinkcheck" class="btn btn-primary">Link identity</a></p>
+			{{end}}
 		</div>
 	</body>
 </html>
@@ -30,7 +35,10 @@
 	<body>
 		{{template "NavPanel" . }}
 		<div class="container text-center py-2" style="max-width: 750px;">
-			<h2>Warzone 2100 Profile linking</h2>
+			<h2>Warzone 2100 identity linking</h2>
+			{{if ne .User.Econf "0"}}
+			<p>You have to confirm your email address in order to link an identity.</p>
+			{{else}}
 			<p><b>WARNING:</b> Anyone who sees this code is capable of taking over your account, games and rating!
 			Administration will be unable to help you in case of an account takeover that involves identity linking.
 			Your .sta2 file has same power as combination of your login and password.</p>
@@ -53,10 +61,11 @@
 			</div>
 			</yes-script>
 			<div id="showBlock" class="hiddenConfirmCode">
-			<p>To link an in-game profile to your account send following message in chat of any Autohoster room:<p>
+			<p>To link an in-game identity to your account send following message in chat of any Autohoster room:<p>
 			<code>{{.WzConfirmCode}}</code>
 			<p><b>You should recieve a replay via in-game chat.</b></p>
 			</div>
+			{{end}}
 		</div>
 	</body>
 </html>
