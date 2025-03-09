@@ -16,6 +16,8 @@
 			<p><a class="btn btn-primary disabled">Register new name</a> You have name pending approval</p>
 			{{else if .and.NameCreateCooldown}}
 			<p><a class="btn btn-primary disabled">Register new name</a> Cooldown: {{.and.NameCreateTimeLeft}}</p>
+			{{else if eq .and.IdentityCount 0}}
+			<p><a class="btn btn-primary disabled">Register new name</a> You have to link an identity first</p>
 			{{else}}
 			<p><a class="btn btn-primary" href="/namepick">Register new name</a></p>
 			{{end}}
@@ -34,18 +36,18 @@
 			<tr>
 				<td>
 				{{if eq $name.Status "denied"}}
-				<text class="text-danger">
+				<span class="text-danger">
 				{{else if eq $name.Status "pending"}}
-				<text class="text-warning">
+				<span class="text-warning">
 				{{else if eq $name.Status "approved"}}
-				<text class="text-success">
+				<span class="text-success">
 				{{else}}
-				<text>
+				<span>
 				{{end}}
 				{{$name.Status}}
 				{{if ne "" $name.Note}}
 				<span title="Administrator note: {{$name.Note}} (Contact administration if you want further clarification)">ⓘ</span>
-				{{end}}</text>
+				{{end}}</span>
 				</td>
 				<td><time datetime="{{$name.TimeCreated}}"></time></td>
 				<td>{{$name.DisplayName}}</td>

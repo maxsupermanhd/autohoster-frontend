@@ -206,6 +206,7 @@ type accountName struct {
 }
 
 type accountNamesData struct {
+	IdentityCount            int
 	Names                    []accountName
 	SelectedNameID           *int
 	DistinctNameCount        int
@@ -242,7 +243,7 @@ func (and accountNamesData) allowedToCreateName() bool {
 	hasPending := and.HasPendingNames
 	lastNameCreationTime := and.getLatestNameCreationTime()
 	nameChangeDuration := getNameChangeDuration()
-	return time.Since(lastNameCreationTime) > nameChangeDuration && !hasPending
+	return time.Since(lastNameCreationTime) > nameChangeDuration && !hasPending && and.IdentityCount > 0
 }
 
 func (and accountNamesData) distinctNameCount() int {
@@ -274,6 +275,10 @@ func (and accountNamesData) hasClearName(clearName string) bool {
 
 func accGetNamesData(ctx context.Context, accountID int) (ret accountNamesData, err error) {
 	err = dbpool.QueryRow(ctx, `select name, name_slots from accounts where id = $1`, accountID).Scan(&ret.SelectedNameID, &ret.NameSlots)
+	if err != nil {
+		return
+	}
+	err = dbpool.QueryRow(ctx, `select count(*) from identities where account = $1`, accountID).Scan(&ret.IdentityCount)
 	if err != nil {
 		return
 	}
