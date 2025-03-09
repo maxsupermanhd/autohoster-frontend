@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -302,9 +303,13 @@ func wzlinkHandler(w http.ResponseWriter, r *http.Request) {
 		Account int
 	}{}
 	err := pgxscan.Select(r.Context(), dbpool, &idt, `select id, name, pkey, hash, account from identities where account = $1`, sessionGetUserID(r))
-	if err != nil && err != pgx.ErrNoRows {
-		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+	if errors.Is(err, pgx.ErrNoRows) {
+		basicLayoutLookupRespond("wzlink", w, r, map[string]any{
+			"Identities": idt,
+		})
+		return
+	}
+	if DBErr(w, r, err) {
 		return
 	}
 	basicLayoutLookupRespond("wzlink", w, r, map[string]any{
