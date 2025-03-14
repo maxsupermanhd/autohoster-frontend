@@ -231,6 +231,10 @@
 				{{template "primitiveStackedChart" .ChartGamesByScav}}
 				<div>
 					<div><h4>Win streaks</h4></div>
+					<div>
+						<div>Top: {{.GlobalWinStreak.TopStreak}} (<a href="/games/{{printf "%s" .GlobalWinStreak.TopGame.MarshalText}}"><time datetime="{{.GlobalWinStreak.TopGame}}"></time></a>)</div>
+						<div>Current: {{.GlobalWinStreak.CurrentStreak}} {{if not .GlobalWinStreak.IsAlive}}💀{{end}} (<a href="/games/{{printf "%s" .GlobalWinStreak.CurrentGame.MarshalText}}"><time datetime="{{.GlobalWinStreak.CurrentGame}}"></time></a>)</div>
+					</div>
 					{{range $_, $streak := .WinStreaks}}
 					<div>
 						<div><b>{{$streak.MapName}}</b></div>

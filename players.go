@@ -101,6 +101,7 @@ func PlayersAccountHandler(w http.ResponseWriter, r *http.Request, accountID int
 		IsAlive       bool
 	}
 	WinStreaks := []WinStreak{}
+	GlobalWinStreak := WinStreak{}
 
 	err = RequestMultiple(func() error {
 		var err error
@@ -346,6 +347,57 @@ limit 4`, accountID)
 			return nil
 		})
 		return err
+	}, func() error {
+		rows, err := dbpool.Query(r.Context(), `with labled_players as (select i.account, g.time_started, p.usertype,
+	row_number() over (partition by account order by time_started) -
+	row_number() over (partition by account, usertype order by time_started) as streak_gr
+	from players p
+	join games g on g.id = p.game
+	left join games_rating_categories as grc on g.id = grc.game
+	left join rating_categories as rc on rc.id = grc.category
+	join identities i on i.id = p.identity and i.account = $1
+	where i.account is not null and coalesce(rc.is_pve, false) = false),
+
+streaks as (select n.clear_name, count(*) as win_streak, max(time_started) as last_game
+	from labled_players
+	join accounts a on a.id = labled_players.account
+	join names n on n.id = a.name
+	where usertype = 'winner'
+	group by n.clear_name, streak_gr),
+
+top_streaks as (select distinct on (clear_name)
+		clear_name, win_streak, last_game
+	from streaks
+	order by clear_name, win_streak desc),
+
+current_streaks as (select distinct on (clear_name)
+		clear_name, win_streak, last_game
+	from streaks
+	order by clear_name, last_game desc)
+
+select c.win_streak as current_streak,
+	c.last_game as current_game,
+	(select
+		l.time_started = c.last_game
+		from labled_players l
+		order by l.time_started desc
+		limit 1) as streak_alive,
+	t.win_streak as top_streak,
+	t.last_game as top_game
+from current_streaks c
+join top_streaks t on c.clear_name = t.clear_name`, accountID)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		GlobalWinStreak, err = pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (WinStreak, error) {
+			streak := WinStreak{}
+			err := row.Scan(&streak.CurrentStreak, &streak.CurrentGame, &streak.IsAlive, &streak.TopStreak, &streak.TopGame)
+			return streak, err
+		})
+		return err
 	})
 	if DBErr(w, r, err) {
 		return
@@ -365,6 +417,7 @@ limit 4`, accountID)
 		"ResearchClassificationTotal":  ResearchClassificationTotal,
 		"ResearchClassificationRecent": ResearchClassificationRecent,
 		"WinStreaks":                   WinStreaks,
+		"GlobalWinStreak":              GlobalWinStreak,
 	})
 }
 
