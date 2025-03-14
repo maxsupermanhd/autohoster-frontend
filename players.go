@@ -397,6 +397,9 @@ join top_streaks t on c.clear_name = t.clear_name`, accountID)
 			err := row.Scan(&streak.CurrentStreak, &streak.CurrentGame, &streak.IsAlive, &streak.TopStreak, &streak.TopGame)
 			return streak, err
 		})
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
 		return err
 	})
 	if DBErr(w, r, err) {
