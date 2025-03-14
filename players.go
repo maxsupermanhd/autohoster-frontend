@@ -332,7 +332,8 @@ select c.map_name,
 from current_streaks c
 join top_streaks t on c.clear_name = t.clear_name and c.map_name = t.map_name
 where t.win_streak >= 2
-order by top_streak desc`, accountID)
+order by top_streak desc
+limit 4`, accountID)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil
 		}
