@@ -229,6 +229,16 @@
 				{{template "primitiveStackedChart" .ChartGamesByBaselevel}}
 				{{template "primitiveStackedChart" .ChartGamesByAlliances}}
 				{{template "primitiveStackedChart" .ChartGamesByScav}}
+				<div>
+					<div><h4>Win streaks</h4></div>
+					{{range $_, $streak := .WinStreaks}}
+					<div>
+						<div><b>{{$streak.MapName}}</b></div>
+						<div>Top: {{$streak.TopStreak}} (<a href="/games/{{printf "%s" $streak.TopGame.MarshalText}}"><time datetime="{{$streak.TopGame}}"></time></a>)</div>
+						<div>Current: {{$streak.CurrentStreak}} {{if not $streak.IsAlive}}💀{{end}} (<a href="/games/{{printf "%s" $streak.CurrentGame.MarshalText}}"><time datetime="{{$streak.CurrentGame}}"></time></a>)</div>
+					</div>
+					{{end}}
+				</div>
 			</div>
 			<noscript>
 				Enable javascript to view table contents
