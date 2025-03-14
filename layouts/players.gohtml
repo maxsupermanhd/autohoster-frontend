@@ -257,7 +257,7 @@
 						<th data-rowspan="1" data-halign="center">Map</th>
 						<th data-colspan="3" data-halign="center" data-class="noBottomBorder">Settings</th>
 						<th data-colspan="2" data-halign="center" data-class="noBottomBorder" data-formatter="playersFormatter" data-class="width45" data-filter-control="input">Players</th>
-						<th data-rowspan="2" data-halign="center" data-formatter="detailsBtn"></th>
+						<th data-rowspan="2" data-halign="center" data-cell-style="gamesRowStyle" data-formatter="detailsBtn"></th>
 					</tr>
 					<tr>
 						<th data-class="hiddenrow" data-formatter="IDFormatter" data-field="ID"></th>
@@ -293,6 +293,29 @@
 			//	});
 			//});
 		})
+		function gamesRowStyle(value, row, index, field) {
+			for (let p of row.Players) {
+				if (p.ClearName != {{.primaryClearName}}) {
+					continue;
+				}
+				console.log(p);
+				if (p.Usertype == "winner") {
+					return {
+						css: {
+							'border-right': '2px solid green'
+						}
+					};
+				}
+				if (p.Usertype == "loser") {
+					return {
+						css: {
+							'border-right': '2px solid red'
+						}
+					};
+				}
+			}
+			return {};
+		}
 		function PlotClassData(resp, ctx, title, subtitle) {
 			if(resp == null) {
 				return;
