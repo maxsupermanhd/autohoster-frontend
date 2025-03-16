@@ -45,7 +45,7 @@ func APIgetResearchSummary(w http.ResponseWriter, r *http.Request) (int, any) {
 	var players []Player
 	var settingAlliance int
 	err := dbpool.QueryRow(context.Background(), `SELECT
-	research_log,
+	research_log::jsonb,
 	json_agg(json_build_object(
 		'Position', p.position,
 		'Team', p.team,
