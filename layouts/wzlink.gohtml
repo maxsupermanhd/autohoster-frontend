@@ -16,7 +16,7 @@
 			Hash: {{$v.Hash}}<br>
 			Public key: {{if $v.Pkey}}{{base64encode $v.Pkey}}{{else}}Not known!{{end}}</p>
 			{{end}}
-			{{if ne .User.Econf "0"}}
+			{{if eq .User.Econf "0"}}
 			<p><a class="btn btn-primary disabled">Link identity</a></p>
 			<p>You have to confirm your email address in order to link an identity.</p>
 			{{else}}
@@ -36,7 +36,7 @@
 		{{template "NavPanel" . }}
 		<div class="container text-center py-2" style="max-width: 750px;">
 			<h2>Warzone 2100 identity linking</h2>
-			{{if ne .User.Econf "0"}}
+			{{if eq .User.Econf "0"}}
 			<p>You have to confirm your email address in order to link an identity.</p>
 			{{else}}
 			<p><b>WARNING:</b> Anyone who sees this code is capable of taking over your account, games and rating!
