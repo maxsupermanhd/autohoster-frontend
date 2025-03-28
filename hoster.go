@@ -142,6 +142,21 @@ where (a.id = any($1) or a.superadmin = true) and i.pkey is not null;`, r.Form["
 		ratingCategories = []int{3}
 	}
 
+	var account_clear_name string
+	err = dbpool.QueryRow(r.Context(), `select n.display_name
+from accounts as a
+join names as n on n.id = a.name
+where a.id = `, sessionGetUserID(r)).Scan(&account_clear_name)
+	if err != nil {
+		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+		return
+	}
+	if account_clear_name == "" {
+		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "You must have name registered to request rooms"})
+		return
+	}
+
 	toSendPreset := map[string]any{
 		"adminsPolicy":       "whitelist",
 		"admins":             adminHashes,
@@ -163,6 +178,9 @@ where (a.id = any($1) or a.superadmin = true) and i.pkey is not null;`, r.Form["
 			},
 		},
 		"frameinterval": inf.Slots / 2,
+		"motds": map[string]any{
+			"9 requested": "This game was requested by " + account_clear_name,
+		},
 	}
 	spew.Dump(toSendPreset)
 
