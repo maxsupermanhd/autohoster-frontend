@@ -146,7 +146,7 @@ where (a.id = any($1) or a.superadmin = true) and i.pkey is not null;`, r.Form["
 	err = dbpool.QueryRow(r.Context(), `select n.display_name
 from accounts as a
 join names as n on n.id = a.name
-where a.id = `, sessionGetUserID(r)).Scan(&account_clear_name)
+where a.id = $1`, sessionGetUserID(r)).Scan(&account_clear_name)
 	if err != nil {
 		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
 		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
