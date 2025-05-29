@@ -218,6 +218,7 @@ GROUP BY 1, 3`, gid).Scan(&researchLog, &players, &settingAlliance)
 			"R-Wpn-Cannon3Mk1",
 			"R-Wpn-Cannon-ROF03",
 			"R-Wpn-Cannon-Damage07",
+			"R-Wpn-PlasmaCannon",
 			"R-Wpn-Cannon-ROF04",
 			"R-Wpn-Cannon-Damage08",
 			"R-Wpn-RailGun01",
