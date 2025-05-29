@@ -30,10 +30,15 @@ func PlayersHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func PlayersIdentityHandler(w http.ResponseWriter, r *http.Request, identSpecifier []byte) {
+	log.Println(identSpecifier)
+	if len(identSpecifier) < 3 {
+		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msg": "Player not found, identity in url can be hex encoded public key or it's sha256 hash (provide at least 6 characters)"})
+		return
+	}
 	var identID int
 	var identPubKey *string
 	var identHash string
-	err := dbpool.QueryRow(r.Context(), `select i.id, encode(i.pkey, 'hex'), i.hash from identities as i where i.pkey = $1 or i.hash ^@ encode($1, 'hex')`, identSpecifier).Scan(&identID, &identPubKey, &identHash)
+	err := dbpool.QueryRow(r.Context(), `select i.id, encode(i.pkey, 'hex'), i.hash from identities as i where position($1::bytea in i.pkey) = 1 or i.hash ^@ encode($1, 'hex')`, identSpecifier).Scan(&identID, &identPubKey, &identHash)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msg": "Player not found, identity in url can be hex encoded public key or it's sha256 hash"})
