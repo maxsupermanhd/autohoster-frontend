@@ -181,6 +181,7 @@ where a.id = $1`, sessionGetUserID(r)).Scan(&account_clear_name)
 		"motds": map[string]any{
 			"9 requested": "This game was requested by " + *account_clear_name,
 		},
+		"pokeCooldownSeconds": 0,
 	}
 	spew.Dump(toSendPreset)
 

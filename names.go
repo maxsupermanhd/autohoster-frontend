@@ -216,6 +216,7 @@ type accountNamesData struct {
 	NameChangeDurationString string
 	NameChangeDuration       time.Duration
 	HasPendingNames          bool
+	HasEmailConfirmed        bool
 }
 
 func (and accountNamesData) getLatestNameCreationTime() time.Time {
@@ -243,7 +244,7 @@ func (and accountNamesData) allowedToCreateName() bool {
 	hasPending := and.HasPendingNames
 	lastNameCreationTime := and.getLatestNameCreationTime()
 	nameChangeDuration := getNameChangeDuration()
-	return time.Since(lastNameCreationTime) > nameChangeDuration && !hasPending && and.IdentityCount > 0
+	return time.Since(lastNameCreationTime) > nameChangeDuration && !hasPending && and.IdentityCount > 0 && and.HasEmailConfirmed
 }
 
 func (and accountNamesData) distinctNameCount() int {
@@ -274,7 +275,8 @@ func (and accountNamesData) hasClearName(clearName string) bool {
 }
 
 func accGetNamesData(ctx context.Context, accountID int) (ret accountNamesData, err error) {
-	err = dbpool.QueryRow(ctx, `select name, name_slots from accounts where id = $1`, accountID).Scan(&ret.SelectedNameID, &ret.NameSlots)
+	var emailConfirmed *time.Time
+	err = dbpool.QueryRow(ctx, `select name, name_slots, email_confirmed from accounts where id = $1`, accountID).Scan(&ret.SelectedNameID, &ret.NameSlots, &emailConfirmed)
 	if err != nil {
 		return
 	}
@@ -300,6 +302,7 @@ func accGetNamesData(ctx context.Context, accountID int) (ret accountNamesData, 
 	nctl := time.Until(ret.getLatestNameCreationTime().Add(getNameChangeDuration())).Round(time.Minute)
 	ret.NameCreateTimeLeft = nctl.String()
 	ret.NameCreateCooldown = nctl > 0
+	ret.HasEmailConfirmed = emailConfirmed != nil
 	return
 }
 

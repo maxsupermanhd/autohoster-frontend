@@ -14,6 +14,8 @@
 			<p><a class="btn btn-primary disabled">Register new name</a> No name slots left</p>
 			{{else if .and.HasPendingNames}}
 			<p><a class="btn btn-primary disabled">Register new name</a> You have name pending approval</p>
+			{{else if not .and.HasEmailConfirmed}}
+			<p><a class="btn btn-primary disabled">Register new name</a> You have have to confirm your email to register names</p>
 			{{else if .and.NameCreateCooldown}}
 			<p><a class="btn btn-primary disabled">Register new name</a> Cooldown: {{.and.NameCreateTimeLeft}}</p>
 			{{else if eq .and.IdentityCount 0}}
@@ -82,7 +84,7 @@
 		{{template "NavPanel" . }}
 		<div class="container my-3">
 			<h2>Pick new Warzone 2100 multiplayer name</h2>
-			<p>You have {{len .and.Names}}/{{.and.NameSlots}} name slots used.</p>
+			<p>You have {{len .and.DistinctNameCount}}/{{.and.NameSlots}} name slots used.</p>
 			{{if .rejected}}
 			<div class="row">
 				<p>{{.rejected}}</p>
@@ -135,6 +137,10 @@
 				<td>《孤勇者》</td>
 				<td>TheLoneWarrior / Gu_yongzhe</td>
 				<td>Phonetic transcription allowed</td>
+			</tr><tr>
+				<td>vaut ΣΑ</td>
+				<td>vaut</td>
+				<td>Clan/tag stripped<br>(see incorrect below)</td>
 			</tr><tr>
 				<td colspan="3">Examples of <b class="text-danger">incorrect</b> display and clear name pairs:</td>
 			</tr><tr>
