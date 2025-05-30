@@ -201,6 +201,11 @@ func main() {
 		researchClassification = []map[string]string{}
 		log.Println("Failed to load research classification: ", err)
 	}
+	researchSummaryPaths, err = LoadResearchSummaryPaths()
+	if err != nil {
+		researchSummaryPaths = [][]string{}
+		log.Println("Failed to load research classification: ", err)
+	}
 
 	log.Println("Loading layouts")
 	layoutsDir := "layouts/"
