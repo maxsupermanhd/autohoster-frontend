@@ -270,7 +270,21 @@ GROUP BY 1, 3`, gid).Scan(&researchLog, &players, &settingAlliance)
 			"R-Wpn-Missile-Accuracy02",
 			"R-Wpn-Missile-ROF03",
 			"R-Wpn-Missile-Damage03",
-		}, {
+		},
+		{
+			"Laser",
+			"R-Wpn-Laser01",
+			"R-Wpn-Energy-Damage01",
+			"R-Wpn-Energy-Accuracy01",
+			"R-Wpn-Laser02",
+			"R-Wpn-Energy-ROF01",
+			"R-Wpn-Energy-Damage02",
+			"R-Wpn-Energy-ROF02",
+			"R-Wpn-AALaser",
+			"R-Wpn-HvyLaser",
+			"R-Wpn-Energy-Damage03",
+		},
+		 {
 			"MG",
 			"R-Wpn-MG1Mk1",
 			"R-Wpn-MG-Damage01",
