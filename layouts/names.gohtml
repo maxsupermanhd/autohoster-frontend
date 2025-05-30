@@ -84,7 +84,7 @@
 		{{template "NavPanel" . }}
 		<div class="container my-3">
 			<h2>Pick new Warzone 2100 multiplayer name</h2>
-			<p>You have {{len .and.DistinctNameCount}}/{{.and.NameSlots}} name slots used.</p>
+			<p>You have {{.and.DistinctNameCount}}/{{.and.NameSlots}} name slots used.</p>
 			{{if .rejected}}
 			<div class="row">
 				<p>{{.rejected}}</p>
