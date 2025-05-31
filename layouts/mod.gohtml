@@ -619,7 +619,7 @@
 			if(value == 'approved') {
 				cl = 'text-success';
 			}
-			return `<text class="${cl}">${value}</text>`;
+			return `<text class="${cl}" title="${row.Note}">${value}</text>`;
 		}
 		function actionsFormatter(value, row) {
 			if(row.Status != "pending") {
