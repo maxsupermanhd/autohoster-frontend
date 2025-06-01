@@ -89,7 +89,7 @@ with
 				(select array_agg(display_name)
 				from (select names.display_name
 						from names
-						where account = accounts.id
+						where account = accounts.id and names.status = 'approved'
 						order by rank () over (order by names.id = accounts.name desc))) as lnames,
 				coalesce(accounts.allow_host_request, false) as lmod,
 				coalesce(accounts.terminated, false) as lterm,
