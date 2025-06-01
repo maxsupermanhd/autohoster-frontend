@@ -325,23 +325,32 @@ func modNamesHandler(w http.ResponseWriter, r *http.Request) {
 		respondWithCodeAndPlaintext(w, 400, "Param is bad ("+status+")")
 		return
 	}
-	rows, err := dbpool.Query(context.Background(), `update names set status = $1, note = $2 where id = $3 returning clear_name, display_name`, status, note, nameID)
+	rows, err := dbpool.Query(context.Background(), `update names set status = $1, note = $2 where id = $3 returning clear_name, display_name, account`, status, note, nameID)
 	if DBErr(w, r, err) {
 		return
 	}
 	rets, err := pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (struct {
 		clearName   string
 		displayName string
+		accountID   int
 	}, error) {
 		ret := struct {
 			clearName   string
 			displayName string
+			accountID   int
 		}{}
-		err := row.Scan(&ret.clearName, &ret.displayName)
+		err := row.Scan(&ret.clearName, &ret.displayName, &ret.accountID)
 		return ret, err
 	})
 	if DBErr(w, r, err) {
 		return
+	}
+	if status == "approved" {
+		tag, err := dbpool.Exec(context.Background(), `update accounts set name = $1 where id = $2`, nameID, rets.accountID)
+		DBErr(w, r, err)
+		if !tag.Update() || tag.RowsAffected() != 1 {
+			notifyErrorWebhook(fmt.Sprintf("sus tag on name approve set account name: %s\n%s", tag.String(), string(debug.Stack())))
+		}
 	}
 	modSendWebhook(fmt.Sprintf("Administrator `%s` `%s` name `%s` `%s` (note `%s`)", sessionGetUsername(r), status, rets.clearName, rets.displayName, note))
 	basicLayoutLookupRespond("modNames", w, r, nil)

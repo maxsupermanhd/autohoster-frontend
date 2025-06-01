@@ -180,7 +180,7 @@ func namePickHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return err
 		}
-		tag, err := tx.Exec(r.Context(), `update accounts set last_name_change = now(), name = $2 where id = $1`, sessionGetUserID(r), insNameID)
+		tag, err := tx.Exec(r.Context(), `update accounts set last_name_change = now() where id = $1`, sessionGetUserID(r))
 		if err != nil {
 			return err
 		}
