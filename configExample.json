@@ -1,0 +1,31 @@
+{
+	"backendUrl": "http://localhost:9271/",
+	"databaseConnString": "host=127.0.0.1 dbname=redacted user=redacted password=redacted application_name=example",
+	"discord": {
+		"id": "redacted",
+		"secret": "redacted"
+	},
+	"multihoster": {
+		"urlBase": "http://localhost:9271/",
+		"mapsFolder": "/home/max/wz-multihoster/build/maps/",
+		"gameDirs": "/home/max/wz-multihoster/build/"
+	},
+	"httpPort": "5555",
+	"displayQuery": false,
+	"lobbyIgnores": "/home/max/p/autohoster-frontend/wzbanlist.txt",
+	"ratingOverrides": {},
+	"replayStorage": "/home/max/replayStorage/",
+	"requireDiscordLink": "",
+	"researchClassification": "/home/max/p/autohoster-frontend/classification.json",
+	"sendgridKey": "redacted",
+	"webhooks": {
+		"actions": "https://discord.com/api/webhooks/redacted",
+		"reports": "https://discord.com/api/webhooks/redacted"
+	},
+	"whitelistedMaps": {
+		"Breach-1-01": {
+			"Hash": "74fdef1897313e2a478e42bb875b9c9ac47fcb839f949c3092b766f395ed0d42",
+			"Players": 2
+		}
+	}
+}
