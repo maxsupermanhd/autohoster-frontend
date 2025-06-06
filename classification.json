@@ -649,59 +649,59 @@
 		"Class": "Armor",
 		"Subclass": "Vehicle"
 	},
-    {
-        "name":"R-Wpn-RailGun01",
-        "Class":"Weapon",
-        "Subclass":"Rail"
-    },
-    {
-        "name":"R-Wpn-Rail-Damage01",
-        "Class":"Weapon",
-        "Subclass":"Rail"
-    },
-    {
-        "name":"R-Wpn-Rail-Accuracy01",
-        "Class":"Weapon",
-        "Subclass":"Rail"
-    },
-    {
-        "name":"R-Wpn-Rail-ROF01",
-        "Class":"Weapon",
-        "Subclass":"Rail"
-    },
-    {
-        "name":"R-Wpn-Rail-Damage02",
-        "Class":"Weapon",
-        "Subclass":"Rail"
-    },
-    {
-        "name":"R-Wpn-RailGun02",
-        "Class":"Weapon",
-        "Subclass":"Rail"
-    },
-    {
-        "name":"R-Wpn-Rail-ROF02",
-        "Class":"Weapon",
-        "Subclass":"Rail"
-    },
-    {
-        "name":"R-Cyborg-Hvywpn-RailGunner",
-        "Class":"Weapon",
-        "Subclass":"Rail"
-    },
-    {
-        "name":"R-Wpn-RailGun03",
-        "Class":"Weapon",
-        "Subclass":"Rail"
-    },
-    {
-        "name":"R-Wpn-Rail-ROF03",
-        "Class":"Weapon",
-        "Subclass":"Rail"
-    },
-    {
-        "name":"R-Wpn-Rail-Damage03",
-        "Class":"Weapon",
-        "Subclass":"Rail"
-    }
+	{
+		"name": "R-Wpn-RailGun01",
+		"Class": "Weapon",
+		"Subclass": "Rail"
+	},
+	{
+		"name": "R-Wpn-Rail-Damage01",
+		"Class": "Weapon",
+		"Subclass": "Rail"
+	},
+	{
+		"name": "R-Wpn-Rail-Accuracy01",
+		"Class": "Weapon",
+		"Subclass": "Rail"
+	},
+	{
+		"name": "R-Wpn-Rail-ROF01",
+		"Class": "Weapon",
+		"Subclass": "Rail"
+	},
+	{
+		"name": "R-Wpn-Rail-Damage02",
+		"Class": "Weapon",
+		"Subclass": "Rail"
+	},
+	{
+		"name": "R-Wpn-RailGun02",
+		"Class": "Weapon",
+		"Subclass": "Rail"
+	},
+	{
+		"name": "R-Wpn-Rail-ROF02",
+		"Class": "Weapon",
+		"Subclass": "Rail"
+	},
+	{
+		"name": "R-Cyborg-Hvywpn-RailGunner",
+		"Class": "Weapon",
+		"Subclass": "Rail"
+	},
+	{
+		"name": "R-Wpn-RailGun03",
+		"Class": "Weapon",
+		"Subclass": "Rail"
+	},
+	{
+		"name": "R-Wpn-Rail-ROF03",
+		"Class": "Weapon",
+		"Subclass": "Rail"
+	},
+	{
+		"name": "R-Wpn-Rail-Damage03",
+		"Class": "Weapon",
+		"Subclass": "Rail"
+	}
 ]
