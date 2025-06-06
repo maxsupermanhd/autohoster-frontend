@@ -703,5 +703,125 @@
 		"name": "R-Wpn-Rail-Damage03",
 		"Class": "Weapon",
 		"Subclass": "Rail"
+	},
+	{
+		"name": "R-Wpn-Missile2A-T",
+		"Class": "Weapon",
+		"Subclass": "Missile"
+	},
+	{
+		"name": "R-Cyborg-Hvywpn-A-T",
+		"Class": "Weapon",
+		"Subclass": "Missile"
+	},
+	{
+		"name": "R-Wpn-Missile-ROF01",
+		"Class": "Weapon",
+		"Subclass": "Missile"
+	},
+	{
+		"name": "R-Wpn-Missile-Damage01",
+		"Class": "Weapon",
+		"Subclass": "Missile"
+	},
+	{
+		"name": "R-Wpn-MdArtMissile",
+		"Class": "Weapon",
+		"Subclass": "Missile"
+	},
+	{
+		"name": "R-Wpn-Missile-ROF02",
+		"Class": "Weapon",
+		"Subclass": "Missile"
+	},
+	{
+		"name": "R-Wpn-Missile-Accuracy01",
+		"Class": "Weapon",
+		"Subclass": "Missile"
+	},
+	{
+		"name": "R-Wpn-Missile-Damage02",
+		"Class": "Weapon",
+		"Subclass": "Missile"
+	},
+	{
+		"name": "R-Wpn-Missile-Accuracy02",
+		"Class": "Weapon",
+		"Subclass": "Missile"
+	},
+	{
+		"name": "R-Wpn-Missile-ROF03",
+		"Class": "Weapon",
+		"Subclass": "Missile"
+	},
+	{
+		"name": "R-Wpn-HvArtMissile",
+		"Class": "Weapon",
+		"Subclass": "Missile"
+	},
+	{
+		"name": "R-Wpn-Missile-Damage03",
+		"Class": "Weapon",
+		"Subclass": "Missile"
+	},
+	{
+		"name": "R-Wpn-Laser01",
+		"Class": "Weapon",
+		"Subclass": "Laser"
+	},
+	{
+		"name": "R-Wpn-Energy-Damage01",
+		"Class": "Weapon",
+		"Subclass": "Laser"
+	},
+	{
+		"name": "R-Wpn-Energy-Accuracy01",
+		"Class": "Weapon",
+		"Subclass": "Laser"
+	},
+	{
+		"name": "R-Wpn-Laser02",
+		"Class": "Weapon",
+		"Subclass": "Laser"
+	},
+	{
+		"name": "R-Wpn-Energy-ROF01",
+		"Class": "Weapon",
+		"Subclass": "Laser"
+	},
+	{
+		"name": "R-Cyborg-Hvywpn-PulseLsr",
+		"Class": "Weapon",
+		"Subclass": "Laser"
+	},
+	{
+		"name": "R-Wpn-Energy-Damage02",
+		"Class": "Weapon",
+		"Subclass": "Laser"
+	},
+	{
+		"name": "R-Wpn-Energy-ROF02",
+		"Class": "Weapon",
+		"Subclass": "Laser"
+	},
+	{
+		"name": "R-Wpn-AALaser",
+		"Class": "Weapon",
+		"Subclass": "Laser"
+	},
+	{
+		"name": "R-Wpn-HvyLaser",
+		"Class": "Weapon",
+		"Subclass": "Laser"
+	},
+	{
+		"name": "R-Wpn-Energy-Damage03",
+		"Class": "Weapon",
+		"Subclass": "Laser"
+	},
+	{
+		"name": "R-Wpn-Energy-ROF03",
+		"Class": "Weapon",
+		"Subclass": "Laser"
 	}
 ]
