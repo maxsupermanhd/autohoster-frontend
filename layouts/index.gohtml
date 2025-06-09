@@ -18,10 +18,10 @@
 			<div class="row">
 				<div class="col">
 					<h3>Welcome to wz2100-autohost.net website</h3>
-					<p>Home of Autohoster - automatic hosting system with ratings and replays.
-						Everyone can request room and get dedicated host for Warzone 2100.
-						Autohoster can read chat, respond to your commands and provide leaderbords.
-						With authentication you can also proof to others that you are legit player.</p>
+					<p>Home of Autohoster - an automatic hosting system with ratings and replays.
+						Anyone can request rooms and dedicated hosts for Warzone 2100.
+						Autohoster can read chat, respond to your commands and provide leaderboards.
+						With authentication you can also prove to others that you are a legitimate player.</p>
 					<div class="row">
 						<div class="col">
 							<h5>Useful links</h5>
@@ -29,7 +29,7 @@
 								<li><a href="/lobby">Web version of lobby</a></li>
 								<li><a href="https://wz2100.euphobos.ru/maps">Map database</a></li>
 								<li><a href="https://wz2100.net">Official website</a></li>
-								<li><a href="https://discord.gg/ycE6UPKH7D">Autohoster moderators discord</a></li>
+								<li><a href="https://discord.gg/ycE6UPKH7D">Autohoster moderator discord</a></li>
 							</ul>
 							<p>We are accepting donations:
 								<ul>
@@ -38,13 +38,13 @@
 							</p>
 						</div>
 						<div class="col col-7">
-							<p>In past 48 hours:</p>
+							<p>In the past 48 hours:</p>
 							{{if avail "LastGames" .}}Games played: {{.LastGames}}<br>{{end}}
 							{{if eq .LastGames 0}}{{else}}
 							{{if avail "LastPlayers" .}}Unique players: {{.LastPlayers}}<br>{{end}}
 							{{if avail "LastGTime" .}}Time in-game: {{GameTimeToStringI .LastGTime}}<br>{{end}}
-							{{if avail "LastProduced" .}}Produced units: {{.LastProduced}}<br>{{end}}
-							{{if avail "LastBuilt" .}}Built structures: {{.LastBuilt}}<br>{{end}}
+							{{if avail "LastProduced" .}}Units produced: {{.LastProduced}}<br>{{end}}
+							{{if avail "LastBuilt" .}}Structures Built: {{.LastBuilt}}<br>{{end}}
 							Games by player count:
 							<table class="table">
 								{{$th := ""}}
@@ -94,25 +94,25 @@
 				chart = new Chart(ctx, {
 					type: 'line', parsing: false, normalized: true,
 					data: {labels: Object.keys(avgData), datasets: [{
-						label: 'Games count',
+						label: 'Game count',
 						data: data,
 						borderColor: 'rgba(0, 119, 204, 0.3)',
 						backgroundColor: 'rgba(0, 119, 204, 0.3)',
 						tension: 0.4,
 					},{
-						label: 'Games 7 day average',
+						label: 'Games: 7 day average',
 						data: avgData,
 						borderColor: 'rgba(0, 119, 204, 1)',
 						backgroundColor: 'rgba(0, 119, 204, 1)',
 						tension: 0.4,
 					},{
-						label: 'Rating games',
+						label: 'Rated games',
 						data: rdata,
 						borderColor: 'rgba(250, 65, 65, 0.3)',
 						backgroundColor: 'rgba(250, 65, 65, 0.3)',
 						tension: 0.4
 					},{
-						label: 'Rating games 7 day average',
+						label: 'Rated games: 7 day average',
 						data: ravgData,
 						borderColor: 'rgba(250, 65, 65, 1)',
 						backgroundColor: 'rgba(250, 65, 65, 1)',
@@ -124,7 +124,7 @@
 						backgroundColor: 'rgba(65, 200, 65, 0.3)',
 						tension: 0.4
 					},{
-						label: 'Non-bot games 7 day average',
+						label: 'Non-bot games: 7 day average',
 						data: nbavgData,
 						borderColor: 'rgba(65, 200, 65, 1)',
 						backgroundColor: 'rgba(65, 200, 65, 1)',
@@ -134,7 +134,7 @@
 						animation: {duration: 0}, responsive: true, maintainAspectRatio: false,
 						plugins: {
 							legend: {position: 'top'},
-							title: {display: true, text: 'Games count', position: 'top'},
+							title: {display: true, text: 'Game count', position: 'top'},
 							zoom: {
 								pan: {enabled: true, mode: 'x'},
 								zoom: {
