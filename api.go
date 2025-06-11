@@ -392,3 +392,68 @@ func APIgetRatingCategories(_ http.ResponseWriter, r *http.Request) (int, any) {
 	}
 	return 200, ret
 }
+
+func APIgetPlayerLabUnuseHeatmap(_ http.ResponseWriter, r *http.Request) (int, any) {
+	params := mux.Vars(r)
+	clearName := params["player"]
+	mapName := params["map"]
+
+	rows, err := dbpool.Query(r.Context(),
+		`select g.id,map_name,p.position,n.clear_name,g.graphs
+	from players as p
+	join identities as i on i.id = p.identity
+	left join accounts as a on a.id = i.account
+	left join names as n on n.id = a.name
+	left join games as g on g.id = p.game
+	where clear_name=$1 and map_name=$2
+	LIMIT 10`,
+		clearName, mapName)
+	if err != nil {
+		return 500, err
+	}
+	defer rows.Close()
+	results := []map[string]any{}
+
+	for rows.Next() {
+		var (
+			id        int
+			mapName   string
+			position  int
+			clearName string
+			graphs    string
+		)
+		err := rows.Scan(&id, &mapName, &position, &clearName, &graphs)
+		if err != nil {
+			return 500, err
+		}
+		if graphs == "" || graphs == "null" {
+			continue
+		}
+		var frames []map[string]any
+		err = json.Unmarshal([]byte(graphs), &frames)
+		if err != nil {
+			return 500, err
+		}
+		for _, frame := range frames {
+			gameTime, ok := frame["gameTime"].(float64)
+			if !ok {
+				continue
+			}
+			potential, ok1 := frame["recentResearchPotential"].([]any)
+			performance, ok2 := frame["recentResearchPerformance"].([]any)
+			if !ok1 || !ok2 || position >= len(potential) || position >= len(performance) {
+				continue
+			}
+			pot, ok1 := potential[position].(float64)
+			perf, ok2 := performance[position].(float64)
+			if !ok1 || !ok2 {
+				continue
+			}
+			results = append(results, map[string]any{
+				"gameTime":  gameTime,
+				"unusedLab": pot - perf,
+			})
+		}
+	}
+	return 200, results
+}
