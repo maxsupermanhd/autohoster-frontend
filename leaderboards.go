@@ -21,6 +21,7 @@ type RatingCategory struct {
 	Variant      string
 	Description  string
 	SortingValue int
+	IsPve        bool
 }
 
 func GetRatingCategories(ctx context.Context, db *pgxpool.Pool) ([]*RatingCategory, error) {
