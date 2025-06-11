@@ -382,8 +382,7 @@ func main() {
 	router.HandleFunc("/api/dayavg", APIcall(APIgetDayAverageByHour)).Methods("GET")
 	router.HandleFunc("/api/playersavg", APIcall(APIgetUniquePlayersPerDay)).Methods("GET")
 	router.HandleFunc("/api/mapcount", APIcall(APIgetMapNameCount)).Methods("GET")
-	router.HandleFunc("/api/playerlabunuse", APIcall(APIgetPlayerLabUnuseHeatmap)).Methods("GET", "OPTIONS")
-	router.HandleFunc("/api/unuse", drawHeatmap)
+	router.HandleFunc("/api/researchInactivity/{playerName}/{mapHash}", APIcall(APIgetPlayerLabUnuseHeatmap)).Methods("GET", "OPTIONS")
 
 	// router.HandleFunc("/elo/calc", EloRecalcHandler)
 

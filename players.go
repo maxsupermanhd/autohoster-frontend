@@ -107,10 +107,38 @@ func PlayersAccountHandler(w http.ResponseWriter, r *http.Request, accountID int
 	}
 	WinStreaks := []WinStreak{}
 	GlobalWinStreak := WinStreak{}
+	type MapStat struct {
+		MapName string
+		MapHash string
+		Count   int
+	}
+	DistinctMaps := []MapStat{}
 
 	err = RequestMultiple(func() error {
 		var err error
 		ResearchClassificationTotal, ResearchClassificationRecent, err = getPlayerClassifications(accountID)
+		return err
+	}, func() error {
+		rows, err := dbpool.Query(r.Context(), `
+			select distinct map_name, map_hash, count(*) from games
+			join players on games.id = players.game
+			join identities on players.identity = identities.id
+			where identities.account = $1
+			group by 1, 2
+			order by count desc`, accountID)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		var map_name, map_hash string
+		var count int
+		_, err = pgx.ForEachRow(rows, []any{&map_name, &map_hash, &count}, func() error {
+			DistinctMaps = append(DistinctMaps, MapStat{
+				MapName: map_name,
+				MapHash: map_hash,
+				Count:   count,
+			})
+			return nil
+		})
 		return err
 	}, func() error {
 		rows, err := dbpool.Query(r.Context(), `with
@@ -426,6 +454,7 @@ join top_streaks t on c.clear_name = t.clear_name`, accountID)
 		"ResearchClassificationRecent": ResearchClassificationRecent,
 		"WinStreaks":                   WinStreaks,
 		"GlobalWinStreak":              GlobalWinStreak,
+		"DistinctMaps":                 DistinctMaps,
 	})
 }
 

@@ -244,6 +244,25 @@
 					{{end}}
 				</div>
 			</div>
+			<div class="d-flex flex-row justify-content-center flex-wrap">
+				<div>
+					<div class="row">
+						<div class="col">
+							<select class="form-select" name="mapSelectForResearchInactivity" id="imputForResearchInactivity">
+								{{range $_, $v := .DistinctMaps}}<option value="{{$v.MapHash}}">{{$v.MapName}} ({{$v.Count}})</option>{{end}}
+							</select>
+						</div><div class="col">
+							<button class="btn btn-primary" onclick="loadResearchInactivity()">Load research inactivity</button>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col">
+							<div id="ResearchInactivityContainer" style="display: none;">
+							<canvas id="ResearchInactivityCanvas" width="800" height="300">
+						</div>
+					</div>
+				</div>
+			</div>
 			<noscript>
 				Enable javascript to view table contents
 				<style> yes-script { display:none; } </style>
@@ -274,6 +293,18 @@
 			</yes-script>
 		</div>
 		<script>
+		function loadResearchInactivity() {
+			document.getElementById('ResearchInactivityContainer').style.display = 'block';
+			let mapHash = document.getElementById('imputForResearchInactivity').value;
+			var xhr = new XMLHttpRequest();
+			xhr.onreadystatechange = function() {
+				if (xhr.readyState === 4 && xhr.status === 200) {
+					PlotScatterData(xhr.response, document.getElementById('ResearchInactivityCanvas').getContext('2d'), "research inactivity", {{.primaryClearName}} + " map "+mapHash);
+				}
+			}
+			xhr.open('GET', window.location.origin+'/api/researchInactivity/{{.primaryClearName}}/'+mapHash, true);
+			xhr.send(null);
+		}
 		$(function() {
 			//PlotLinearData({{.RatingHistory}}, document.getElementById('ElodiffGraphCanvas').getContext('2d'), '{{.primaryDisplayName}}', 'Rating history');
 			PlotClassData({{.ResearchClassificationTotal}}, document.getElementById('ClassificationGraphCanvasTotal').getContext('2d'), '{{.primaryDisplayName}}', 'Research classification (all time)');
@@ -339,6 +370,37 @@
 					scales: {r: {
 						min: 0
 					}}
+				}
+			});
+		}
+		function PlotScatterData(resp, ctx, title, subtitle) {
+			if(resp == null) {
+				return;
+			}
+			if(resp.length == 0) {
+				return
+			}
+			chart3 = new Chart(ctx, {
+				type: 'scatter',
+				data: {
+					datasets: [{
+						data: resp,
+						label: '{{.Player.DisplayName}}',
+						backgroundColor: 'rgb(255, 99, 132)'
+					}]
+				},
+				options: {
+					//plugins: {
+					//	legend: {position: 'top'},
+					//	title: {display: true, text: title, position: 'top'},
+					//	subtitle: {display: true, text: subtitle}
+					//}, 
+					scales: {
+						x: {
+							type: 'linear',
+							position: 'bottom'
+						}
+					}
 				}
 			});
 		}

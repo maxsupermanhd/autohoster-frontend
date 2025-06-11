@@ -8,10 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"image"
-	"image/color"
-	"image/draw"
-	"image/png"
 	"log"
 	"net/http"
 	"runtime/debug"
@@ -397,11 +393,15 @@ func APIgetRatingCategories(_ http.ResponseWriter, r *http.Request) (int, any) {
 	return 200, ret
 }
 
-func APIgetPlayerLabUnuseHeatmap(_ http.ResponseWriter, r *http.Request) (int, any) {
-	query := r.URL.Query()
+type LabUnusePoint struct {
+	GameTime  float64 `json:"x"`
+	UnusedLab float64 `json:"y"`
+}
 
-	clearName := query.Get("player")
-	mapName := query.Get("map")
+func APIgetPlayerLabUnuseHeatmap(_ http.ResponseWriter, r *http.Request) (int, any) {
+
+	clearName := mux.Vars(r)["playerName"]
+	mapHash := mux.Vars(r)["mapHash"]
 
 	rows, err := dbpool.Query(r.Context(),
 		`select g.id,map_name,p.position,n.clear_name,g.graphs
@@ -410,13 +410,19 @@ func APIgetPlayerLabUnuseHeatmap(_ http.ResponseWriter, r *http.Request) (int, a
 	left join accounts as a on a.id = i.account
 	left join names as n on n.id = a.name
 	left join games as g on g.id = p.game
-	where clear_name=$1 and map_name=$2`,
-		clearName, mapName)
+	where clear_name=$1 and map_hash=$2`,
+		clearName, mapHash)
 	if err != nil {
 		return 500, err
 	}
 	defer rows.Close()
-	results := []map[string]any{}
+	results := []LabUnusePoint{}
+
+	type graphPart struct {
+		GameTime                  float64   `json:"gameTime"`
+		RecentResearchPotential   []float64 `json:"recentResearchPotential"`
+		RecentResearchPerformance []float64 `json:"recentResearchPerformance"`
+	}
 
 	for rows.Next() {
 		var (
@@ -424,144 +430,112 @@ func APIgetPlayerLabUnuseHeatmap(_ http.ResponseWriter, r *http.Request) (int, a
 			mapName   string
 			position  int
 			clearName string
-			graphs    string
+			frames    []graphPart
 		)
-		err := rows.Scan(&id, &mapName, &position, &clearName, &graphs)
+		err := rows.Scan(&id, &mapName, &position, &clearName, &frames)
 		if err != nil {
 			return 500, err
 		}
-		if graphs == "" || graphs == "null" {
+		if frames == nil {
 			continue
-		}
-		var frames []map[string]any
-		err = json.Unmarshal([]byte(graphs), &frames)
-		if err != nil {
-			return 500, err
 		}
 		var prev = 0.
 		for _, frame := range frames {
-			gameTime, ok := frame["gameTime"].(float64)
-			if !ok {
+			potential := frame.RecentResearchPotential
+			performance := frame.RecentResearchPerformance
+			if position >= len(potential) || position >= len(performance) {
 				continue
 			}
-			potential, ok1 := frame["recentResearchPotential"].([]any)
-			performance, ok2 := frame["recentResearchPerformance"].([]any)
-			if !ok1 || !ok2 || position >= len(potential) || position >= len(performance) {
-				continue
+			unusedLab := potential[position] - performance[position]
+			if unusedLab-prev > 0 {
+				results = append(results, LabUnusePoint{
+					GameTime:  frame.GameTime / 1000,
+					UnusedLab: unusedLab - prev,
+				})
 			}
-			pot, ok1 := potential[position].(float64)
-			perf, ok2 := performance[position].(float64)
-			if !ok1 || !ok2 {
-				continue
-			}
-			var unusedLab = (pot - perf)
-			results = append(results, map[string]any{
-				"gameTime":  gameTime,
-				"unusedLab": unusedLab - prev,
-			})
 			prev = unusedLab
 		}
 	}
 	return 200, results
 }
 
-type DataPoint struct {
-	GameTime  int `json:"gameTime"`
-	UnusedLab int `json:"unusedLab"`
-}
+// func drawHeatmap(w http.ResponseWriter, r *http.Request) (int, any) {
+// 	status, raw := APIgetPlayerLabUnuseHeatmap(w, r)
+// 	if status != 200 {
+// 		return status, raw
+// 	}
 
-func drawHeatmap(w http.ResponseWriter, r *http.Request) {
-	status, raw := APIgetPlayerLabUnuseHeatmap(w, r)
-	if status != 200 {
-		http.Error(w, "Failed to load data", status)
-		return
-	}
+// 	points, ok := raw.([]LabUnusePoint)
+// 	if !ok {
+// 		return 500, fmt.Sprintf("%T", raw)
+// 	}
 
-	rawSlice, ok := raw.([]map[string]any)
-	if !ok {
-		http.Error(w, "Unexpected data format", http.StatusInternalServerError)
-		return
-	}
+// 	// Proceed with image generation using points
+// 	const (
+// 		width     = 1800
+// 		height    = 900
+// 		margin    = 50
+// 		pointSize = 3
+// 	)
 
-	// Convert raw data to []DataPoint
-	points := make([]DataPoint, 0, len(rawSlice))
-	for _, item := range rawSlice {
-		gameTime, ok1 := item["gameTime"].(float64)
-		unusedLab, ok2 := item["unusedLab"].(float64)
-		if !ok1 || !ok2 {
-			continue
-		}
-		points = append(points, DataPoint{
-			GameTime:  int(gameTime),
-			UnusedLab: int(unusedLab),
-		})
-	}
+// 	img := image.NewRGBA(image.Rect(0, 0, width, height))
+// 	draw.Draw(img, img.Bounds(), &image.Uniform{color.White}, image.Point{}, draw.Src)
 
-	// Proceed with image generation using points
-	const (
-		width     = 800
-		height    = 600
-		margin    = 50
-		pointSize = 3
-	)
+// 	// Determine bounds
+// 	if len(points) == 0 {
+// 		return 204, nil
+// 	}
 
-	img := image.NewRGBA(image.Rect(0, 0, width, height))
-	draw.Draw(img, img.Bounds(), &image.Uniform{color.White}, image.Point{}, draw.Src)
+// 	minX, maxX := points[0].GameTime, points[0].GameTime
+// 	minY, maxY := points[0].UnusedLab, points[0].UnusedLab
+// 	for _, d := range points {
+// 		if d.GameTime < minX {
+// 			minX = d.GameTime
+// 		}
+// 		if d.GameTime > maxX {
+// 			maxX = d.GameTime
+// 		}
+// 		if d.UnusedLab < minY {
+// 			minY = d.UnusedLab
+// 		}
+// 		if d.UnusedLab > maxY {
+// 			maxY = d.UnusedLab
+// 		}
+// 	}
+// 	if maxX == minX {
+// 		maxX++ // prevent div by zero
+// 	}
+// 	if maxY == minY {
+// 		maxY++
+// 	}
 
-	// Determine bounds
-	if len(points) == 0 {
-		http.Error(w, "No data to display", http.StatusNoContent)
-		return
-	}
+// 	// Draw data points
+// 	for _, d := range points {
+// 		normX := float64(d.GameTime-minX) / float64(maxX-minX)
+// 		normY := float64(d.UnusedLab-minY) / float64(maxY-minY)
 
-	minX, maxX := points[0].GameTime, points[0].GameTime
-	minY, maxY := points[0].UnusedLab, points[0].UnusedLab
-	for _, d := range points {
-		if d.GameTime < minX {
-			minX = d.GameTime
-		}
-		if d.GameTime > maxX {
-			maxX = d.GameTime
-		}
-		if d.UnusedLab < minY {
-			minY = d.UnusedLab
-		}
-		if d.UnusedLab > maxY {
-			maxY = d.UnusedLab
-		}
-	}
-	if maxX == minX {
-		maxX++ // prevent div by zero
-	}
-	if maxY == minY {
-		maxY++
-	}
+// 		x := int(normX*float64(width-2*margin)) + margin
+// 		y := height - margin - int(normY*float64(height-2*margin))
 
-	// Draw data points
-	for _, d := range points {
-		normX := float64(d.GameTime-minX) / float64(maxX-minX)
-		normY := float64(d.UnusedLab-minY) / float64(maxY-minY)
+// 		intensity := uint8(normY * 255)
+// 		heatColor := color.RGBA{intensity, 0, 0, 255}
 
-		x := int(normX*float64(width-2*margin)) + margin
-		y := height - margin - int(normY*float64(height-2*margin))
+// 		for dx := -pointSize / 2; dx <= pointSize/2; dx++ {
+// 			for dy := -pointSize / 2; dy <= pointSize/2; dy++ {
+// 				px := x + dx
+// 				py := y + dy
+// 				if px >= 0 && px < width && py >= 0 && py < height {
+// 					img.Set(px, py, heatColor)
+// 				}
+// 			}
+// 		}
+// 	}
 
-		intensity := uint8(normY * 255)
-		heatColor := color.RGBA{intensity, 0, 0, 255}
+// 	// Return PNG image
+// 	w.Header().Set("Content-Type", "image/png")
+// 	if err := png.Encode(w, img); err != nil {
+// 		http.Error(w, "Failed to encode image", http.StatusInternalServerError)
+// 	}
 
-		for dx := -pointSize / 2; dx <= pointSize/2; dx++ {
-			for dy := -pointSize / 2; dy <= pointSize/2; dy++ {
-				px := x + dx
-				py := y + dy
-				if px >= 0 && px < width && py >= 0 && py < height {
-					img.Set(px, py, heatColor)
-				}
-			}
-		}
-	}
-
-	// Return PNG image
-	w.Header().Set("Content-Type", "image/png")
-	if err := png.Encode(w, img); err != nil {
-		http.Error(w, "Failed to encode image", http.StatusInternalServerError)
-	}
-}
+// 	return 0, nil
+// }
