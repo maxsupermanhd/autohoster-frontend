@@ -293,13 +293,17 @@
 			</yes-script>
 		</div>
 		<script>
+		var researchInactivityChart = null;
 		function loadResearchInactivity() {
 			document.getElementById('ResearchInactivityContainer').style.display = 'block';
 			let mapHash = document.getElementById('imputForResearchInactivity').value;
 			var xhr = new XMLHttpRequest();
 			xhr.onreadystatechange = function() {
 				if (xhr.readyState === 4 && xhr.status === 200) {
-					PlotScatterData(xhr.response, document.getElementById('ResearchInactivityCanvas').getContext('2d'), "research inactivity", {{.primaryClearName}} + " map "+mapHash);
+					if (researchInactivityChart != null) {
+						researchInactivityChart.destroy();
+					}
+					researchInactivityChart = PlotScatterData(JSON.parse(xhr.response), document.getElementById('ResearchInactivityCanvas').getContext('2d'), "research inactivity", {{.primaryClearName}} + " map "+mapHash);
 				}
 			}
 			xhr.open('GET', window.location.origin+'/api/researchInactivity/{{.primaryClearName}}/'+mapHash, true);
@@ -354,7 +358,7 @@
 			if(Object.keys(resp).length == 0) {
 				return
 			}
-			chart2 = new Chart(ctx, {
+			return new Chart(ctx, {
 				type: 'radar', parsing: false, normalized: true,
 				data: {
 					labels: Object.keys(resp),
@@ -380,7 +384,7 @@
 			if(resp.length == 0) {
 				return
 			}
-			chart3 = new Chart(ctx, {
+			return new Chart(ctx, {
 				type: 'scatter',
 				data: {
 					datasets: [{
@@ -411,7 +415,7 @@
 			if(Object.keys(resp).length == 0) {
 				return
 			}
-			chart2 = new Chart(ctx, {
+			return new Chart(ctx, {
 				type: 'line', normalized: true,
 				data: {
 					labels: Object.keys(resp),
