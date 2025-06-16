@@ -404,13 +404,14 @@ func APIgetPlayerLabUnuseHeatmap(_ http.ResponseWriter, r *http.Request) (int, a
 	mapHash := mux.Vars(r)["mapHash"]
 
 	rows, err := dbpool.Query(r.Context(),
-		`select g.id,map_name,p.position,n.clear_name,g.graphs
+		`select g.id, map_name, p.position, n.clear_name, g.graphs
 	from players as p
 	join identities as i on i.id = p.identity
 	left join accounts as a on a.id = i.account
 	left join names as n on n.id = a.name
 	left join games as g on g.id = p.game
-	where clear_name=$1 and map_hash=$2`,
+	where clear_name=$1 and map_hash=$2
+	limit 20`,
 		clearName, mapHash)
 	if err != nil {
 		return 500, err
