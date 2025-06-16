@@ -251,7 +251,7 @@
 							<select class="form-select" name="mapSelectForResearchInactivity" id="imputForResearchInactivity">
 								{{range $_, $v := .DistinctMaps}}<option value="{{$v.MapHash}}">{{$v.MapName}} ({{$v.Count}})</option>{{end}}
 							</select>
-						</div><div class="col">
+						</div><div class="col text-nowrap">
 							<button class="btn btn-primary" onclick="loadResearchInactivity()">Load research inactivity</button>
 						</div>
 					</div>
