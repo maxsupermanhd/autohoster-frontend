@@ -441,21 +441,26 @@ func APIgetPlayerLabUnuseHeatmap(_ http.ResponseWriter, r *http.Request) (int, a
 		if frames == nil {
 			continue
 		}
-		var prev = 0.
+		var prevPerformance = 0.
+		var prevPotenital = 0.
 		for _, frame := range frames {
 			potential := frame.RecentResearchPotential
 			performance := frame.RecentResearchPerformance
+
 			if position >= len(potential) || position >= len(performance) {
 				continue
 			}
-			unusedLab := potential[position] - performance[position]
-			if unusedLab-prev > 0 {
-				results = append(results, LabUnusePoint{
-					GameTime:  frame.GameTime / 1000,
-					UnusedLab: unusedLab - prev,
-				})
+			if potential[position]-prevPotenital <= 0 {
+				prevPotenital = potential[position] - prevPotenital
+				continue
 			}
-			prev = unusedLab
+			unusedLab := (performance[position] - prevPerformance) / (potential[position] - prevPotenital)
+			results = append(results, LabUnusePoint{
+				GameTime:  frame.GameTime / 1000,
+				UnusedLab: unusedLab,
+			})
+			prevPotenital = potential[position]
+			prevPerformance = performance[position]
 		}
 	}
 	return 200, results
