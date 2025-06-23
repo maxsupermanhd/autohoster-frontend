@@ -2,8 +2,10 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"image/png"
@@ -156,44 +158,44 @@ group by g.id`
 }
 
 func DbGamesHandler(w http.ResponseWriter, r *http.Request) {
-	dmapsc := make(chan []string)
-	var dmaps []string
-	dmapspresent := false
-	dtotalc := make(chan int)
-	var dtotal int
-	dtotalpresent := false
-	errc := make(chan error)
-	go func() {
-		var mapnames []string
-		derr := dbpool.QueryRow(r.Context(), `select array_agg(distinct map_name) from games where hidden = false and deleted = false;`).Scan(&mapnames)
-		if derr != nil && derr != pgx.ErrNoRows {
-			errc <- derr
-			return
+	var dMapList []string
+	var dTotal int
+	var dGamesMinDate time.Time
+	var dGamesMaxDate time.Time
+
+	err := RequestMultiple(func() error {
+		err := dbpool.QueryRow(r.Context(), `select array_agg(distinct map_name) from games where hidden = false and deleted = false;`).Scan(&dMapList)
+		if err != nil && err != pgx.ErrNoRows {
+			return err
 		}
-		dmapsc <- mapnames
-	}()
-	go func() {
-		var c int
-		derr := dbpool.QueryRow(r.Context(), `select count(*) from games where hidden = false and deleted = false;`).Scan(&c)
-		if derr != nil && derr != pgx.ErrNoRows {
-			errc <- derr
-			return
+		return nil
+	}, func() error {
+		err := dbpool.QueryRow(r.Context(), `select count(*) from games where hidden = false and deleted = false;`).Scan(&dTotal)
+		if err != nil && err != pgx.ErrNoRows {
+			return err
 		}
-		dtotalc <- c
-	}()
-	for !(dmapspresent && dtotalpresent) {
-		select {
-		case err := <-errc:
-			basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
-			notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
-			return
-		case dmaps = <-dmapsc:
-			dmapspresent = true
-		case dtotal = <-dtotalc:
-			dtotalpresent = true
+		return nil
+	}, func() error {
+		err := dbpool.QueryRow(r.Context(), `select min(time_started), max(time_started) from games where hidden = false and deleted = false;`).Scan(&dGamesMinDate, &dGamesMaxDate)
+		if err != nil && err != pgx.ErrNoRows {
+			return err
 		}
+		return nil
+	})
+
+	if err != nil {
+		basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+		return
 	}
-	basicLayoutLookupRespond("games2", w, r, map[string]any{"Total": dtotal, "Maps": dmaps})
+	basicLayoutLookupRespond("games2", w, r, map[string]any{
+		"Total": dTotal,
+		"Maps":  dMapList,
+		"GameDateFilterConstraints": map[string]string{
+			"min": dGamesMinDate.Format(time.DateOnly),
+			"max": dGamesMaxDate.Format(time.DateOnly),
+		},
+	})
 }
 
 func APIgetGames(_ http.ResponseWriter, r *http.Request) (int, any) {
@@ -254,6 +256,7 @@ func APIgetGames(_ http.ResponseWriter, r *http.Request) (int, any) {
 			wherecase += " AND g.id = any((select game from plf))"
 		}
 	}
+	var filterByDate string
 	if reqDoFilters {
 		val, ok := reqFilterFields["MapName"]
 		if ok {
@@ -262,6 +265,16 @@ func APIgetGames(_ http.ResponseWriter, r *http.Request) (int, any) {
 				wherecase = "WHERE g.map_name = $1"
 			} else {
 				wherecase += fmt.Sprintf(" AND g.map_name = $%d", len(whereargs))
+			}
+		}
+		val, ok = reqFilterFields["TimeStarted"]
+		if ok {
+			filterByDate = val
+			whereargs = append(whereargs, val)
+			if wherecase == "" {
+				wherecase = "WHERE date_trunc('day', g.time_started) = $1"
+			} else {
+				wherecase += fmt.Sprintf(" AND date_trunc('day', g.time_started) = $%d", len(whereargs))
 			}
 		}
 	}
@@ -280,35 +293,18 @@ func APIgetGames(_ http.ResponseWriter, r *http.Request) (int, any) {
 	limiter := fmt.Sprintf("LIMIT %d", reqLimit)
 	offset := fmt.Sprintf("OFFSET %d", reqOffset)
 
-	totalsc := make(chan int)
 	var totals int
-	totalspresent := false
-
-	totalsNoFilterc := make(chan int)
 	var totalsNoFilter int
-	totalsNoFilterpresent := false
-
-	growsc := make(chan []Game)
 	var gms []Game
-	gpresent := false
+	var filteredMaps []string
 
-	echan := make(chan error)
-	go func() {
-		var c int
+	err := RequestMultiple(func() error {
 		req := `select count(*) from games where hidden = false and deleted = false;`
 		if isSuperadmin(r.Context(), sessionGetUsername(r)) {
 			req = `select count(*) from games;`
 		}
-		derr := dbpool.QueryRow(r.Context(), req).Scan(&c)
-		if derr != nil {
-			log.Println(derr)
-			echan <- derr
-			return
-		}
-		totalsNoFilterc <- c
-	}()
-	go func() {
-		var c int
+		return dbpool.QueryRow(r.Context(), req).Scan(&totalsNoFilter)
+	}, func() error {
 		req := `with plf as (
 	select *
 	from players as p
@@ -325,16 +321,8 @@ join identities as i on i.id = p.identity
 ` + wherecase + `
 ;`
 		// log.Printf("req %s args %#+v", req, whereargs)
-		derr := dbpool.QueryRow(r.Context(), req, whereargs...).Scan(&c)
-		if derr != nil {
-			log.Println(derr)
-			echan <- derr
-			return
-		}
-		totalsc <- c
-	}()
-
-	go func() {
+		return dbpool.QueryRow(r.Context(), req, whereargs...).Scan(&totals)
+	}, func() error {
 		req := `with plf as (
 	select *
 	from players as p
@@ -378,12 +366,9 @@ group by g.id
 ` + offset
 		args := append(whereargs, orderargs...)
 		// log.Printf("req %s args %#+v", req, args)
-		gmsStage := []Game{}
 		rows, err := dbpool.Query(r.Context(), req, args...)
 		if err != nil {
-			log.Println(err)
-			echan <- err
-			return
+			return err
 		}
 		for rows.Next() {
 			g := Game{}
@@ -393,46 +378,47 @@ group by g.id
 				&g.MapName, &g.MapHash, &g.Mods, &g.Deleted, &g.Hidden, &g.Calculated, &g.DebugTriggered, &g.DisplayCategory,
 				&playersJSON)
 			if err != nil {
-				echan <- err
-				return
+				return err
 			}
 			g.Players = []Player{}
 			err = json.Unmarshal([]byte(playersJSON), &g.Players)
 			if err != nil {
-				echan <- err
-				return
+				return err
 			}
 			slices.SortFunc(g.Players, func(a Player, b Player) int {
 				return a.Position - b.Position
 			})
-			gmsStage = append(gmsStage, g)
+			gms = append(gms, g)
 		}
 		if err != nil {
-			echan <- err
-			return
+			return err
 		}
-		growsc <- gmsStage
-	}()
-	for !(gpresent && totalspresent && totalsNoFilterpresent) {
-		select {
-		case err := <-echan:
-			if err == pgx.ErrNoRows {
-				return 200, []byte(`{"total": 0, "totalNotFiltered": 0, "rows": []}`)
-			}
-			notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
-			return 500, err
-		case gms = <-growsc:
-			gpresent = true
-		case totals = <-totalsc:
-			totalspresent = true
-		case totalsNoFilter = <-totalsNoFilterc:
-			totalsNoFilterpresent = true
+		return nil
+	}, func() error {
+		if filterByDate == "" {
+			return nil
 		}
+		req := `select array_agg(distinct map_name) from games where hidden = false and deleted = false and date_trunc('day', time_started) = $1;`
+		if isSuperadmin(r.Context(), sessionGetUsername(r)) {
+			req = `select array_agg(distinct map_name) from games where date_trunc('day', time_started) = $1;`
+		}
+		return dbpool.QueryRow(r.Context(), req, filterByDate).Scan(&filteredMaps)
+	})
+
+	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return -1, nil
+		}
+		// basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
+		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
+		return 500, err
 	}
+
 	return 200, map[string]any{
 		"total":            totals,
 		"totalNotFiltered": totalsNoFilter,
 		"rows":             gms,
+		"filteredMaps":     filteredMaps,
 	}
 }
 

@@ -39,8 +39,8 @@
 					</tr>
 					<tr>
 						<th data-class="hiddenrow" data-formatter="IDFormatter" data-field="ID"></th>
-						<th data-class="hiddenrow" data-formatter="TimeFormatter" data-field="TimeStarted"></th>
-						<th data-class="hiddenrow" data-formatter="MapNameFormatter" data-field="MapName" data-filter-control="select" data-filter-data="var:MapsSelection"></th>
+						<th data-class="hiddenrow" data-formatter="TimeFormatter" data-filter-control="datepicker" data-filter-datepicker-options="{{jsonencode .GameDateFilterConstraints}}" data-field="TimeStarted"></th>
+						<th data-class="hiddenrow" data-formatter="MapNameFormatter" data-field="MapName" data-filter-control="select" data-filter-data="func:GetMapSelection"></th>
 						<th data-class="hiddenrow" data-field="SettingBase" data-formatter="BaseLevelSettingsFormatter"></th>
 						<th data-class="hiddenrow" data-field="SettingScavs" data-formatter="ScavengersSettingsFormatter"></th>
 						<th data-class="hiddenrow" data-field="SettingAlliance" data-formatter="AlliancesSettingsFormatter"></th>
@@ -52,9 +52,10 @@
 			</yes-script>
 		</div>
 		<script>
-		var MapsSelection = { {{range $k, $v := .Maps}}
-			"{{$v}}": "{{$v}}",{{end}}
-		};
+		var MapsSelection = {{.Maps}};
+		function GetMapSelection() {
+			return MapsSelection;
+		}
 		$(function() {
 			$('#table').bootstrapTable(Object.assign(defaultTableOptions, {
 				url: "/api/games",
@@ -66,6 +67,9 @@
 				},
 				formatSearch: function () {
 					return 'Search participants';
+				},
+				onLoadSuccess: function (data, status, jqXHR) {
+					{{/* MapsSelection = data.filteredMaps; */}}
 				}
 			}));
 		})

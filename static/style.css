@@ -694,6 +694,10 @@
 	padding: 2px;
 }
 
+.filter-control > input {
+	padding: 2px;
+}
+
 .width45 {
 	width: 45%;
 }

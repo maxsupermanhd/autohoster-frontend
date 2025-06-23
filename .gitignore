@@ -8,6 +8,6 @@ logs/
 *.diff
 layouts-*
 wzbanlist.txt
-config.json
+config*.json
 .timetracker
 mapcache/
