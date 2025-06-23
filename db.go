@@ -18,6 +18,7 @@ type genericRequestParams struct {
 	sortColumns             []string
 	filterColumnsFull       []string
 	filterColumnsStartsWith []string
+	filterColumnsExpression map[string]string
 	searchColumn            string
 	searchSimilarity        float64
 	addWhereCase            string
@@ -78,6 +79,17 @@ func genericViewRequest[T any](r *http.Request, params genericRequestParams) (in
 				whereargs = append(whereargs, val)
 				if wherecase == "" {
 					wherecase = "WHERE starts_with(" + v + ", $1)"
+				} else {
+					wherecase += fmt.Sprintf(" AND starts_with("+v+", $%d)", len(whereargs))
+				}
+			}
+		}
+		for k, v := range params.filterColumnsExpression {
+			val, ok := reqFilterFields[k]
+			if ok {
+				whereargs = append(whereargs, val)
+				if wherecase == "" {
+					wherecase = fmt.Sprintf("WHERE "+v, 1)
 				} else {
 					wherecase += fmt.Sprintf(" AND starts_with("+v+", $%d)", len(whereargs))
 				}

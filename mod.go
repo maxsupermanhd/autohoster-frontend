@@ -246,8 +246,11 @@ func APIgetLogs2(_ http.ResponseWriter, r *http.Request) (int, any) {
 		sortColumns:             []string{"id", "whensent"},
 		filterColumnsFull:       []string{"id", "msg"},
 		filterColumnsStartsWith: []string{"name", "pkey", "msgtype"},
-		searchColumn:            "name || msg",
-		searchSimilarity:        0.3,
+		filterColumnsExpression: map[string]string{
+			"whensent": "date_trunc('day', whensent) = $%d",
+		},
+		searchColumn:     "name || msg",
+		searchSimilarity: 0.3,
 		columnMappings: map[string]string{
 			"id":       "id",
 			"whensent": "whensent",

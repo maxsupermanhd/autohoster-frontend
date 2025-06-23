@@ -141,7 +141,7 @@
 					</tr>
 				</thead>
 			</table>
-			<yes-script>
+			</yes-script>
 		</div>
 		<script>
 		var $table = $('#table')
@@ -284,56 +284,26 @@
 				<style> yes-script { display:none; } </style>
 			</noscript>
 			<yes-script>
-			<table id="table" class="smart-table table-fit"
-			data-url="/api/logs"
-			data-filter-control="true"
-			data-sort-name="whensent"
-			data-sort-order="desc"
-			data-show-refresh="true"
-			data-toolbar="#table-toolbar"
-			data-cache="false"
-			data-toggle="table"
-			data-id-field="ID"
-			data-pagination="true"
-			data-page-size="50"
-			data-page-number="1"
-			data-pagination-loop="false"
-			data-show-extended-pagination="true"
-			data-page-list="[10, 15, 25, 35, 50, 100, 500]"
-			data-buttons-prefix="btn btn-sm btn-primary"
-			data-buttons="buttons"
-			data-classes="table table-striped table-sm"
-			data-search="true"
-			data-show-search-button="true"
-			data-search-on-enter-key="true"
-			data-side-pagination="server"
-			{{/* data-search-highlight="true" */}}
-			data-show-search-clear-button="true"
-			data-escape="true"
-			{{/* data-detail-view="true" */}}
-			{{/* data-detail-view-icon="true" */}}
-			{{/* data-detail-formatter="detailFormatter" */}}
-			{{/* data-card-view="true" */}}
-			data-show-filter-control-switch="true"
-			data-filter-control-visible="false"
-			data-sticky-header="true">
+			<table id="table" class="smart-table table-fit">
 				<thead>
 					<tr>
 						<th data-field="id" data-sortable="true">id</th>
 						<th data-field="msgtype" data-sortable="true" data-filter-control="select">msgtype</th>
-						<th data-field="whensent" data-sortable="true" data-formatter="SimpleTimeFromatter" data-class="text-nowrap">whensent</th>
+						<th data-field="whensent" data-sortable="true" data-filter-control="datepicker" data-formatter="SimpleTimeFromatter" data-class="text-nowrap">whensent</th>
 						<th data-field="pkey" data-formatter="hashFormatter" data-filter-control="input">pkey</th>
 						<th data-field="name" data-class="w-25 overflow-scroll text-nowrap" data-filter-control="input">name</th>
 						<th data-field="msg" data-class="w-100 overflow-scroll text-nowrap">msg</th>
 					</tr>
 				</thead>
 			</table>
-			<yes-script>
+			</yes-script>
 		</div>
 		<script>
 		var $table = $('#table')
 		$(function() {
-			$table.bootstrapTable();
+			$table.bootstrapTable(Object.assign(defaultTableOptions, {
+				url: "/api/logs",
+			}));
 		})
 		</script>
 		</div>
@@ -459,7 +429,7 @@
 					</tr>
 				</thead>
 			</table>
-			<yes-script>
+			</yes-script>
 		</div>
 		<script>
 		var $table = $('#table')
@@ -524,7 +494,7 @@
 					</tr>
 				</thead>
 			</table>
-			<yes-script>
+			</yes-script>
 		</div>
 		<script>
 		var $table = $('#table')
@@ -603,7 +573,7 @@
 					</tr>
 				</thead>
 			</table>
-			<yes-script>
+			</yes-script>
 		</div>
 		<script>
 		var $table = $('#table')
@@ -691,7 +661,7 @@
 			<yes-script>
 			<table id="table" class="smart-table table-fit">
 			</table>
-			<yes-script>
+			</yes-script>
 		</div>
 		<script>
 		var $table = $('#table')
