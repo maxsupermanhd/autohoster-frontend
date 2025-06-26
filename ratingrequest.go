@@ -113,7 +113,7 @@ with
 				rating.account as racc
 			from rating, s1
 			where rating.account = s1.lacc and rating.category = 2)
-select lid, lacc, lnames, lmod, lterm, ladmin, lhidden, lwins, r
+select lid, lacc, lnames, lmod, lterm, ladmin, lhidden, lexcludemod, lwins, r
 from s1
 left join s2 on s1.lid = s2.s2lid
 left join s3 on s1.lacc = s3.racc`, hash).Scan(
