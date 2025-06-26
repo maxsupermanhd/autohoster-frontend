@@ -75,7 +75,7 @@ func ratingLookup(hash string, gameVersion string) Ra {
 	var lid int
 	var lacc *int
 	var lnames []string
-	var lmod, lterm, ladmin bool
+	var lmod, lterm, ladmin, lhidden bool
 
 	var lwinsZ *int
 	var lwins int
@@ -86,6 +86,7 @@ func ratingLookup(hash string, gameVersion string) Ra {
 with
 	s1 as (select identities.id as lid,
 				identities.account as lacc,
+				identities.rating_hidden as lhidden,
 				(select array_agg(display_name)
 				from (select names.display_name
 						from names
@@ -111,14 +112,22 @@ with
 				rating.account as racc
 			from rating, s1
 			where rating.account = s1.lacc and rating.category = 2)
-select lid, lacc, lnames, lmod, lterm, ladmin, lwins, r
+select lid, lacc, lnames, lmod, lterm, ladmin, lhidden, lwins, r
 from s1
 left join s2 on s1.lid = s2.s2lid
 left join s3 on s1.lacc = s3.racc`, hash).Scan(
-		&lid, &lacc, &lnames, &lmod, &lterm, &ladmin,
+		&lid, &lacc, &lnames, &lmod, &lterm, &ladmin, &lhidden,
 		&lwinsZ,
 		&lrating,
 	)
+
+	if lhidden {
+		m.Details = "This identity decided to hide their name\n"
+		m.NameTextColorOverride = [3]int{0x66, 0x66, 0x66}
+		m.EloTextColorOverride = [3]int{0xff, 0x44, 0x44}
+		m.Elo = "Unknown player"
+		return m
+	}
 
 	if lwinsZ != nil {
 		lwins = *lwinsZ
