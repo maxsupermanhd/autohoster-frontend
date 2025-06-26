@@ -16,7 +16,8 @@
 			<p>ID: {{$v.ID}} Name: {{$v.Name}}<br>
 			Hash: {{$v.Hash}}<br>
 			Public key: {{if $v.Pkey}}{{base64encode $v.Pkey}}{{else}}Not known!{{end}}<br>
-			{{template "wzlinkIdentityHideStatus" $v}}</p>
+			{{template "wzlinkIdentityHideStatus" $v}}
+			{{template "wzlinkIdentityExcludeAdminStatus" $v}}</p>
 			{{end}}
 			{{if eq .User.Econf "0"}}
 			<p><a class="btn btn-primary disabled">Link identity</a></p>
@@ -32,6 +33,12 @@
 <span>
 Rating is {{if .RatingHidden}}hidden{{else}}visible{{end}}
 <button class="btn btn-sm btn-outline-secondary" hx-post="/wzlink" hx-target="closest span" hx-vals='{"Action": "setHidden", "Ident": "{{.ID}}", "Data": {{not .RatingHidden}}}'>Toggle</button>
+</span>
+{{end}}
+{{define "wzlinkIdentityExcludeAdminStatus"}}
+<span>
+Account permissions {{if .ExcludeAdmin}}disabled{{else}}enabled{{end}}
+<button class="btn btn-sm btn-outline-secondary" hx-post="/wzlink" hx-target="closest span" hx-vals='{"Action": "setExcludeAdmin", "Ident": "{{.ID}}", "Data": {{not .ExcludeAdmin}}}'>Toggle</button>
 </span>
 {{end}}
 {{define "wzlinkcheck"}}

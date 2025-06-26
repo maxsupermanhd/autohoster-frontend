@@ -75,7 +75,7 @@ func ratingLookup(hash string, gameVersion string) Ra {
 	var lid int
 	var lacc *int
 	var lnames []string
-	var lmod, lterm, ladmin, lhidden bool
+	var lmod, lexcludemod, lterm, ladmin, lhidden bool
 
 	var lwinsZ *int
 	var lwins int
@@ -87,6 +87,7 @@ with
 	s1 as (select identities.id as lid,
 				identities.account as lacc,
 				identities.rating_hidden as lhidden,
+				identities.exclude_admin as lexcludemod,
 				(select array_agg(display_name)
 				from (select names.display_name
 						from names
@@ -116,7 +117,7 @@ select lid, lacc, lnames, lmod, lterm, ladmin, lhidden, lwins, r
 from s1
 left join s2 on s1.lid = s2.s2lid
 left join s3 on s1.lacc = s3.racc`, hash).Scan(
-		&lid, &lacc, &lnames, &lmod, &lterm, &ladmin, &lhidden,
+		&lid, &lacc, &lnames, &lmod, &lterm, &ladmin, &lhidden, &lexcludemod,
 		&lwinsZ,
 		&lrating,
 	)
@@ -167,7 +168,7 @@ left join s3 on s1.lacc = s3.racc`, hash).Scan(
 		m.Level = 8
 		m.NameTextColorOverride = [3]int{0x33, 0xff, 0x33}
 		m.Name = "Admin"
-	} else if lmod {
+	} else if lmod && !lexcludemod {
 		m.Level = 7
 		m.NameTextColorOverride = [3]int{0x11, 0xaa, 0x11}
 		m.Name = "Moderator"

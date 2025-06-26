@@ -322,8 +322,9 @@ func wzlinkHandlerGET(w http.ResponseWriter, r *http.Request) {
 		Hash         string
 		Account      int
 		RatingHidden bool
+		ExcludeAdmin bool
 	}{}
-	err := pgxscan.Select(r.Context(), dbpool, &idt, `select id, name, pkey, hash, account, rating_hidden from identities where account = $1`, sessionGetUserID(r))
+	err := pgxscan.Select(r.Context(), dbpool, &idt, `select id, name, pkey, hash, account, rating_hidden, exclude_admin from identities where account = $1`, sessionGetUserID(r))
 	if errors.Is(err, pgx.ErrNoRows) {
 		basicLayoutLookupRespond("wzlink", w, r, map[string]any{
 			"Identities": idt,
@@ -360,20 +361,8 @@ func wzlinkHandlerPOST(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	switch formAction {
-	case "setHidden":
-		wzlinkHandlerIdentChangeRatingHidden(w, r, formIdent)
-		return
-	default:
-		log.Println("unknown action")
-		basicLayoutLookupRespond("error400", w, r, map[string]any{})
-		return
-	}
-}
-
-func wzlinkHandlerIdentChangeRatingHidden(w http.ResponseWriter, r *http.Request, ident int) {
 	var identClaimAccountID int
-	err := dbpool.QueryRow(context.Background(), `select account from identities where id = $1`, ident).Scan(&identClaimAccountID)
+	err := dbpool.QueryRow(context.Background(), `select account from identities where id = $1`, formIdent).Scan(&identClaimAccountID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		log.Println("no rows")
 		basicLayoutLookupRespond("error400", w, r, map[string]any{})
@@ -387,9 +376,24 @@ func wzlinkHandlerIdentChangeRatingHidden(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	setHiddenVal := parseFormBool(r, "Data")
+	switch formAction {
+	case "setHidden":
+		wzlinkHandlerIdentChangeRatingHidden(w, r, formIdent)
+		return
+	case "setExcludeAdmin":
+		wzlinkHandlerIdentChangeExcludeAdmin(w, r, formIdent)
+		return
+	default:
+		log.Println("unknown action")
+		basicLayoutLookupRespond("error400", w, r, map[string]any{})
+		return
+	}
+}
 
-	tag, err := dbpool.Exec(context.Background(), `update identities set rating_hidden = $1 where id = $2`, setHiddenVal, ident)
+func wzlinkHandlerIdentChangeRatingHidden(w http.ResponseWriter, r *http.Request, ident int) {
+	setVal := parseFormBool(r, "Data")
+
+	tag, err := dbpool.Exec(context.Background(), `update identities set rating_hidden = $1 where id = $2`, setVal, ident)
 
 	if DBErr(w, r, err) {
 		return
@@ -399,7 +403,24 @@ func wzlinkHandlerIdentChangeRatingHidden(w http.ResponseWriter, r *http.Request
 	}
 	basicLayoutLookupRespond("wzlinkIdentityHideStatus", w, r, map[string]any{
 		"ID":           ident,
-		"RatingHidden": setHiddenVal,
+		"RatingHidden": setVal,
+	})
+}
+
+func wzlinkHandlerIdentChangeExcludeAdmin(w http.ResponseWriter, r *http.Request, ident int) {
+	setVal := parseFormBool(r, "Data")
+
+	tag, err := dbpool.Exec(context.Background(), `update identities set exclude_admin = $1 where id = $2`, setVal, ident)
+
+	if DBErr(w, r, err) {
+		return
+	}
+	if !tag.Update() || tag.RowsAffected() != 1 {
+		notifyErrorWebhook(fmt.Sprintf("sus tag on identity hidden status change: %s\n%s", tag.String(), string(debug.Stack())))
+	}
+	basicLayoutLookupRespond("wzlinkIdentityExcludeAdminStatus", w, r, map[string]any{
+		"ID":           ident,
+		"ExcludeAdmin": setVal,
 	})
 }
 
