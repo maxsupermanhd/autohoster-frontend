@@ -164,7 +164,7 @@ left join s3 on s1.lacc = s3.racc`, hash).Scan(
 		return m
 	}
 
-	if ladmin {
+	if ladmin && !lexcludemod {
 		m.Level = 8
 		m.NameTextColorOverride = [3]int{0x33, 0xff, 0x33}
 		m.Name = "Admin"
