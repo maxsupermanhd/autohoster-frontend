@@ -308,7 +308,8 @@ func main() {
 
 	router.HandleFunc("/request", hostRequestHandlerGET).Methods("GET")
 	router.HandleFunc("/request", hostRequestHandlerPOST).Methods("POST")
-	router.HandleFunc("/wzlink", wzlinkHandler)
+	router.HandleFunc("/wzlink", wzlinkHandlerGET).Methods("GET")
+	router.HandleFunc("/wzlink", wzlinkHandlerPOST).Methods("POST")
 	router.HandleFunc("/wzlinkcheck", wzlinkCheckHandler)
 	router.HandleFunc("/autohoster", basicLayoutHandler("autohoster-control"))
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -309,19 +310,20 @@ func wzlinkCheckHandler(w http.ResponseWriter, r *http.Request) {
 	basicLayoutLookupRespond("wzlinkcheck", w, r, map[string]any{"LinkStatus": "code", "WzConfirmCode": "/hostmsg " + confirmcode})
 }
 
-func wzlinkHandler(w http.ResponseWriter, r *http.Request) {
+func wzlinkHandlerGET(w http.ResponseWriter, r *http.Request) {
 	if !checkUserAuthorized(r) {
 		basicLayoutLookupRespond("noauth", w, r, map[string]any{})
 		return
 	}
 	idt := []struct {
-		ID      int
-		Name    string
-		Pkey    []byte
-		Hash    string
-		Account int
+		ID           int
+		Name         string
+		Pkey         []byte
+		Hash         string
+		Account      int
+		RatingHidden bool
 	}{}
-	err := pgxscan.Select(r.Context(), dbpool, &idt, `select id, name, pkey, hash, account from identities where account = $1`, sessionGetUserID(r))
+	err := pgxscan.Select(r.Context(), dbpool, &idt, `select id, name, pkey, hash, account, rating_hidden from identities where account = $1`, sessionGetUserID(r))
 	if errors.Is(err, pgx.ErrNoRows) {
 		basicLayoutLookupRespond("wzlink", w, r, map[string]any{
 			"Identities": idt,
@@ -333,6 +335,71 @@ func wzlinkHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	basicLayoutLookupRespond("wzlink", w, r, map[string]any{
 		"Identities": idt,
+	})
+}
+
+func wzlinkHandlerPOST(w http.ResponseWriter, r *http.Request) {
+	if !checkUserAuthorized(r) {
+		basicLayoutLookupRespond("noauth", w, r, map[string]any{})
+		return
+	}
+
+	var formAction string
+	if formParsingVal := parseFormString(r, "Action", nil); formParsingVal != nil {
+		formAction = *formParsingVal
+	} else {
+		basicLayoutLookupRespond("error400", w, r, map[string]any{})
+		return
+	}
+
+	var formIdent int
+	if formParsingVal := parseFormInt(r, "Ident"); formParsingVal != nil {
+		formIdent = *formParsingVal
+	} else {
+		basicLayoutLookupRespond("error400", w, r, map[string]any{})
+		return
+	}
+
+	switch formAction {
+	case "setHidden":
+		wzlinkHandlerIdentChangeRatingHidden(w, r, formIdent)
+		return
+	default:
+		log.Println("unknown action")
+		basicLayoutLookupRespond("error400", w, r, map[string]any{})
+		return
+	}
+}
+
+func wzlinkHandlerIdentChangeRatingHidden(w http.ResponseWriter, r *http.Request, ident int) {
+	var identClaimAccountID int
+	err := dbpool.QueryRow(context.Background(), `select account from identities where id = $1`, ident).Scan(&identClaimAccountID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		log.Println("no rows")
+		basicLayoutLookupRespond("error400", w, r, map[string]any{})
+		return
+	}
+	if DBErr(w, r, err) {
+		return
+	}
+	if sessionGetUserID(r) != identClaimAccountID {
+		basicLayoutLookupRespond("error403", w, r, map[string]any{})
+		return
+	}
+
+	setHiddenVal := parseFormBool(r, "Data")
+
+	tag, err := dbpool.Exec(context.Background(), `update identities set rating_hidden = $1 where id = $2`, setHiddenVal, ident)
+
+	if DBErr(w, r, err) {
+		return
+	}
+	if !tag.Update() || tag.RowsAffected() != 1 {
+		notifyErrorWebhook(fmt.Sprintf("sus tag on identity hidden status change: %s\n%s", tag.String(), string(debug.Stack())))
+	}
+	basicLayoutLookupRespond("wzlinkIdentityHideStatus", w, r, map[string]any{
+		"ID":           ident,
+		"RatingHidden": setHiddenVal,
 	})
 }
 
