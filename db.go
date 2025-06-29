@@ -140,6 +140,10 @@ func genericViewRequest[T any](r *http.Request, params genericRequestParams) (in
 	if err != nil {
 		return 500, err
 	}
+
+	if rows == nil {
+		rows = []*T{}
+	}
 	return 200, map[string]any{
 		"total":            totals,
 		"totalNotFiltered": totalsNoFilter,

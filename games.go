@@ -188,9 +188,14 @@ func DbGamesHandler(w http.ResponseWriter, r *http.Request) {
 		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return
 	}
+
+	dMapMap := map[string]string{}
+	for _, v := range dMapList {
+		dMapMap[v] = v
+	}
 	basicLayoutLookupRespond("games2", w, r, map[string]any{
 		"Total": dTotal,
-		"Maps":  dMapList,
+		"Maps":  dMapMap,
 		"GameDateFilterConstraints": map[string]string{
 			"min": dGamesMinDate.Format(time.DateOnly),
 			"max": dGamesMaxDate.Format(time.DateOnly),
@@ -206,24 +211,24 @@ func APIgetGames(_ http.ResponseWriter, r *http.Request) (int, any) {
 	if reqLimit <= 0 {
 		reqLimit = 1
 	}
+	limiter := fmt.Sprintf("limit %d", reqLimit)
 	reqOffset := parseQueryInt(r, "offset", 0)
 	if reqOffset < 0 {
 		reqOffset = 0
 	}
+	offset := fmt.Sprintf("offset %d", reqOffset)
 	reqSortOrder := parseQueryStringFiltered(r, "order", "desc", "asc")
-	fieldmappings := map[string]string{
+	reqSortField := parseQueryStringMapped(r, "sort", "time_started", map[string]string{
 		"TimeStarted": "time_started",
 		"TimeEnded":   "time_ended",
 		"ID":          "id",
 		"MapName":     "map_name",
 		"GameTime":    "game_time",
-	}
-	reqSortField := parseQueryStringMapped(r, "sort", "time_started", fieldmappings)
+	})
 
-	reqFilterJ := parseQueryString(r, "filter", "")
 	reqFilterFields := map[string]string{}
 	reqDoFilters := false
-	if reqFilterJ != "" {
+	if reqFilterJ := parseQueryString(r, "filter", ""); reqFilterJ != "" {
 		err := json.Unmarshal([]byte(reqFilterJ), &reqFilterFields)
 		if err == nil && len(reqFilterFields) > 0 {
 			reqDoFilters = true
@@ -231,30 +236,17 @@ func APIgetGames(_ http.ResponseWriter, r *http.Request) (int, any) {
 	}
 
 	whereplayerscase := ""
-	wherecase := "WHERE deleted = false AND hidden = false"
+	wherecase := "where deleted = false and hidden = false"
 	whereargs := []any{}
 	if isSuperadmin(r.Context(), sessionGetUsername(r)) {
 		wherecase = ""
 	}
-	playerPubKey := parseQueryString(r, "player", "")
-	if playerPubKey != "" {
+	if playerPubKey := parseQueryString(r, "player", ""); playerPubKey != "" {
 		whereplayerscase = "where $1 = encode(i.pkey, 'hex')"
 		whereargs = append(whereargs, playerPubKey)
-		if wherecase == "" {
-			wherecase = "WHERE g.id = any((select game from plf))"
-		} else {
-			wherecase += " AND g.id = any((select game from plf))"
-		}
-	}
-	clearName := parseQueryString(r, "clear_name", "")
-	if clearName != "" {
+	} else if clearName := parseQueryString(r, "clear_name", ""); clearName != "" {
 		whereplayerscase = "where $1 = n.clear_name"
 		whereargs = append(whereargs, clearName)
-		if wherecase == "" {
-			wherecase = "WHERE g.id = any((select game from plf))"
-		} else {
-			wherecase += " AND g.id = any((select game from plf))"
-		}
 	}
 	var filterByDate string
 	if reqDoFilters {
@@ -262,9 +254,9 @@ func APIgetGames(_ http.ResponseWriter, r *http.Request) (int, any) {
 		if ok {
 			whereargs = append(whereargs, val)
 			if wherecase == "" {
-				wherecase = "WHERE g.map_name = $1"
+				wherecase = "where g.map_name = $1"
 			} else {
-				wherecase += fmt.Sprintf(" AND g.map_name = $%d", len(whereargs))
+				wherecase += fmt.Sprintf(" and g.map_name = $%d", len(whereargs))
 			}
 		}
 		val, ok = reqFilterFields["TimeStarted"]
@@ -272,26 +264,23 @@ func APIgetGames(_ http.ResponseWriter, r *http.Request) (int, any) {
 			filterByDate = val
 			whereargs = append(whereargs, val)
 			if wherecase == "" {
-				wherecase = "WHERE date_trunc('day', g.time_started) = $1"
+				wherecase = "where date_trunc('day', g.time_started) = $1"
 			} else {
-				wherecase += fmt.Sprintf(" AND date_trunc('day', g.time_started) = $%d", len(whereargs))
+				wherecase += fmt.Sprintf(" and date_trunc('day', g.time_started) = $%d", len(whereargs))
 			}
 		}
 	}
 
-	reqSearch := parseQueryString(r, "search", "")
-
-	ordercase := fmt.Sprintf("ORDER BY %s %s", reqSortField, reqSortOrder)
+	ordergamescase := fmt.Sprintf("order by %s %s", reqSortField, reqSortOrder)
+	ordercase := fmt.Sprintf("order by %s %s", reqSortField, reqSortOrder)
 	orderargs := []any{}
 
-	if reqSearch != "" {
+	if reqSearch := parseQueryString(r, "search", ""); reqSearch != "" {
 		orderargs = []any{reqSearch}
 		argnum := len(whereargs) + 1
-		ordercase = fmt.Sprintf("ORDER BY rank () over (order by min(levenshtein(n.clear_name, $%d::text)) desc) desc, %s %s", argnum, reqSortField, reqSortOrder)
+		ordergamescase = fmt.Sprintf("order by rank () over (order by min(levenshtein(p.clear_name, $%d::text)) desc) desc, %s %s", argnum, reqSortField, reqSortOrder)
+		ordercase = fmt.Sprintf("order by rank () over (order by min(levenshtein(n.clear_name, $%d::text)) desc) desc, %s %s", argnum, reqSortField, reqSortOrder)
 	}
-
-	limiter := fmt.Sprintf("LIMIT %d", reqLimit)
-	offset := fmt.Sprintf("OFFSET %d", reqOffset)
 
 	var totals int
 	var totalsNoFilter int
@@ -305,7 +294,7 @@ func APIgetGames(_ http.ResponseWriter, r *http.Request) (int, any) {
 		}
 		return dbpool.QueryRow(r.Context(), req).Scan(&totalsNoFilter)
 	}, func() error {
-		req := `with plf as (
+		req := `with wp as (
 	select *
 	from players as p
 	join identities as i on i.id = p.identity
@@ -313,23 +302,34 @@ func APIgetGames(_ http.ResponseWriter, r *http.Request) (int, any) {
 	left join names as n on n.id = a.name
 	` + whereplayerscase + `
 )
-select
-	count(distinct g.id)
+select count(distinct g.id)
 from games as g
-join players as p on p.game = g.id
-join identities as i on i.id = p.identity
-` + wherecase + `
-;`
-		// log.Printf("req %s args %#+v", req, whereargs)
+join wp as p on p.game = g.id
+` + wherecase
+		if cfg.GetDSBool(false, "displayQuery") {
+			log.Printf("req 1 %s args %#+v", req, whereargs)
+		}
 		return dbpool.QueryRow(r.Context(), req, whereargs...).Scan(&totals)
 	}, func() error {
-		req := `with plf as (
-	select *
-	from players as p
-	join identities as i on i.id = p.identity
-	left join accounts as a on a.id = i.account
-	left join names as n on n.id = a.name
-	` + whereplayerscase + `),
+		req := `with
+	wp as (
+		select *
+		from players as p
+		join identities as i on i.id = p.identity
+		left join accounts as a on a.id = i.account
+		left join names as n on n.id = a.name
+		` + whereplayerscase + `
+	),
+	wg as (
+		select g.id
+		from games as g
+		join wp as p on p.game = g.id
+		` + wherecase + `
+		group by g.id
+		` + ordergamescase + `
+		` + limiter + `
+		` + offset + `
+	),
 	rBotAutoDumbWon as (select count(*) from players where identity = 12071 and usertype = 'winner'),
 	rBotAutoDumbPlayed as (select count(*) from players where identity = 12071)
 select
@@ -347,25 +347,25 @@ select
 		'Account', a.id,
 		'DisplayName', coalesce(n.display_name, ''),
 		'ClearName', coalesce(n.clear_name, ''),
-		'Rating', CASE  WHEN i.id = 12071 THEN json_build_object(
+		'Rating', CASE WHEN i.id = 12071 THEN json_build_object(
 							't', 'botwl',
 							'won', (select * from rBotAutoDumbWon),
 							'played', (select * from rBotAutoDumbPlayed))
 						ELSE (select to_json(r) from rating as r where r.category = g.display_category and r.account = i.account)
-				  END
+				 END
 	)) as players
 from games as g
+join wg on wg.id = g.id
 join players as p on p.game = g.id
 join identities as i on i.id = p.identity
 left join accounts as a on a.id = i.account
 left join names as n on n.id = a.name
-` + wherecase + `
 group by g.id
-` + ordercase + `
-` + limiter + `
-` + offset
+` + ordercase
 		args := append(whereargs, orderargs...)
-		// log.Printf("req %s args %#+v", req, args)
+		if cfg.GetDSBool(false, "displayQuery") {
+			log.Printf("req 2 %s args %#+v", req, args)
+		}
 		rows, err := dbpool.Query(r.Context(), req, args...)
 		if err != nil {
 			return err
@@ -412,6 +412,10 @@ group by g.id
 		// basicLayoutLookupRespond("plainmsg", w, r, map[string]any{"msgred": true, "msg": "Something gone wrong, contact administrator."})
 		notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 		return 500, err
+	}
+
+	if gms == nil {
+		gms = []Game{}
 	}
 
 	return 200, map[string]any{
