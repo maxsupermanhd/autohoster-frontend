@@ -72,14 +72,11 @@ func ratingLookup(hash string, gameVersion string) Ra {
 		return m
 	}
 
-	var lid int
-	var lacc *int
+	var lid, lwins int
+	var lacc, lwinsZ *int
 	var lnames []string
 	var lmod, lexcludemod, lterm, ladmin, lhidden bool
-
-	var lwinsZ *int
-	var lwins int
-
+	var ltag *string
 	var lrating map[string]any
 
 	err := dbpool.QueryRow(context.Background(), `
@@ -95,7 +92,8 @@ with
 						order by rank () over (order by names.id = accounts.name desc))) as lnames,
 				coalesce(accounts.allow_host_request, false) as lmod,
 				coalesce(accounts.terminated, false) as lterm,
-				coalesce(accounts.superadmin, false) as ladmin
+				coalesce(accounts.superadmin, false) as ladmin,
+				accounts.tag as ltag
 			from identities
 			left join accounts on accounts.id = identities.account
 			where hash = $1),
@@ -113,11 +111,11 @@ with
 				rating.account as racc
 			from rating, s1
 			where rating.account = s1.lacc and rating.category = 2)
-select lid, lacc, lnames, lmod, lterm, ladmin, lhidden, lexcludemod, lwins, r
+select lid, lacc, lnames, lmod, lterm, ladmin, lhidden, lexcludemod, ltag, lwins, r
 from s1
 left join s2 on s1.lid = s2.s2lid
 left join s3 on s1.lacc = s3.racc`, hash).Scan(
-		&lid, &lacc, &lnames, &lmod, &lterm, &ladmin, &lhidden, &lexcludemod,
+		&lid, &lacc, &lnames, &lmod, &lterm, &ladmin, &lhidden, &lexcludemod, &ltag,
 		&lwinsZ,
 		&lrating,
 	)
@@ -164,14 +162,22 @@ left join s3 on s1.lacc = s3.racc`, hash).Scan(
 		return m
 	}
 
+	if ltag != nil {
+		m.Name = *ltag
+	}
+
 	if ladmin && !lexcludemod {
 		m.Level = 8
 		m.NameTextColorOverride = [3]int{0x33, 0xff, 0x33}
-		m.Name = "Admin"
+		if m.Name == "" {
+			m.Name = "Admin"
+		}
 	} else if lmod && !lexcludemod {
 		m.Level = 7
 		m.NameTextColorOverride = [3]int{0x11, 0xaa, 0x11}
-		m.Name = "Moderator"
+		if m.Name == "" {
+			m.Name = "Moderator"
+		}
 	} else if len(lnames) > 0 {
 		m.Level = 1
 	}
