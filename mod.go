@@ -466,6 +466,6 @@ func modReportsHandler(w http.ResponseWriter, r *http.Request) {
 	if !tag.Update() || tag.RowsAffected() != 1 {
 		notifyErrorWebhook(fmt.Sprintf("sus tag on report resolve: %s\n%s", tag.String(), string(debug.Stack())))
 	}
-	modSendWebhook(fmt.Sprintf("Administrator `%s` resolved report `%d` with comment `%s`", sessionGetUsername(r), escapeBacktick(r.FormValue("reportID")), escapeBacktick(r.FormValue("resolution"))))
+	modSendWebhook(fmt.Sprintf("Administrator `%s` resolved report `%s` with comment `%s`", sessionGetUsername(r), escapeBacktick(r.FormValue("reportID")), escapeBacktick(r.FormValue("resolution"))))
 	basicLayoutLookupRespond("modReports", w, r, nil)
 }
