@@ -2,11 +2,8 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"html/template"
-	"log"
 	"net/http"
-	"runtime/debug"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -89,7 +86,6 @@ where g.time_started > now()-$1::interval`, timeInterval).Scan(&uniqPlayers)
 		from gms
 		group by count`, timeInterval)
 		if err != nil {
-			notifyErrorWebhook(fmt.Sprintf("%s\n%s", err.Error(), string(debug.Stack())))
 			return err
 		}
 		_, err = pgx.ForEachRow(rows, []any{&pc, &gc}, func() error {
@@ -123,9 +119,8 @@ ORDER BY date_trunc('day', g.time_started)`)
 		})
 		return err
 	})
-
-	if err != nil {
-		log.Println(err)
+	if DBErr(w, r, err) {
+		return
 	}
 	basicLayoutLookupRespond("index", w, r, map[string]any{
 		"News":               announcements,
