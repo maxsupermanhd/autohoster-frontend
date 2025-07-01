@@ -60,7 +60,7 @@ func reportHandlerGET(w http.ResponseWriter, r *http.Request) {
 		Whenreported time.Time
 		Resolution   *string
 	}
-	err := pgxscan.Select(r.Context(), dbpool, &reports, `select id, whenreported, resolution from reports where reporter = $1`, sessionGetUsername(r))
+	err := pgxscan.Select(r.Context(), dbpool, &reports, `select id, whenreported, resolution from reports where reporter = $1 order by whenreported desc`, sessionGetUsername(r))
 	if DBErr(w, r, err) {
 		return
 	}
