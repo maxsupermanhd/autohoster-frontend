@@ -300,8 +300,9 @@ func main() {
 	router.HandleFunc("/activate", emailconfHandler)
 	router.HandleFunc("/recover", recoverPasswordHandler)
 	// router.HandleFunc("/oauth/discord", DiscordCallbackHandler)
-	router.HandleFunc("/report", basicLayoutHandler("report")).Methods("GET")
-	router.HandleFunc("/report", reportHandler).Methods("POST")
+	router.HandleFunc("/report", reportHandlerGET).Methods("GET")
+	router.HandleFunc("/report", reportHandlerPOST).Methods("POST")
+	router.HandleFunc("/report/validatePlayerInput", reportHandlerValidatePlayerInput).Methods("GET")
 	router.HandleFunc("/names", namesHandler).Methods("GET")
 	router.HandleFunc("/names", namesHandlerPOST).Methods("POST")
 	router.HandleFunc("/namepick", namePickHandler).Methods("GET", "POST")
@@ -342,6 +343,10 @@ func main() {
 
 	router.HandleFunc("/moderation/debug", basicSuperadminHandler("modDebug")).Methods("GET")
 	router.HandleFunc("/moderation/debug/instanceToGame", SuperadminCheck(modDebugInstanceToGame)).Methods("GET")
+
+	router.HandleFunc("/moderation/reports", basicSuperadminHandler("modReports")).Methods("GET")
+	router.HandleFunc("/moderation/reports", SuperadminCheck(modReportsHandler)).Methods("POST")
+	router.HandleFunc("/api/reports", APIcall(APISuperadminCheck(APIgetReports))).Methods("GET", "OPTIONS")
 
 	// router.HandleFunc("/moderation/ratingCategories", basicSuperadminHandler("modRatingCategories")).Methods("GET")
 	// router.HandleFunc("/api/ratingCategories", APIcall(APIgetRatingCategories)).Methods("GET", "OPTIONS")

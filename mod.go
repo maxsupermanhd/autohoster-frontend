@@ -428,3 +428,43 @@ func modDebugInstanceToGame(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Location", "/games/"+string(gameIDBytes))
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
+
+func APIgetReports(_ http.ResponseWriter, r *http.Request) (int, any) {
+	return genericViewRequest[struct {
+		ID            int
+		Whenreported  time.Time
+		Reporter      string
+		Violation     string
+		Violationtime string
+		Offender      string
+		Comment       string
+		Resolution    *string
+	}](r, genericRequestParams{
+		tableName:               "reports",
+		limitClamp:              500,
+		sortDefaultOrder:        "desc",
+		sortDefaultColumn:       "id",
+		sortColumns:             []string{"id", "whenreported"},
+		filterColumnsFull:       []string{"id", "reporter"},
+		filterColumnsStartsWith: []string{},
+		searchColumn:            "comment",
+		searchSimilarity:        0.1,
+		columnMappings: map[string]string{
+			"ID":           "id",
+			"WhenReported": "whenreported",
+			"Reporter":     "reporter",
+			"Comment":      "comment",
+		},
+	})
+}
+
+func modReportsHandler(w http.ResponseWriter, r *http.Request) {
+	tag, err := dbpool.Exec(context.Background(), `update reports set resolution = $1 where id = $2`, r.FormValue("resolution"), r.FormValue("reportID"))
+	if DBErr(w, r, err) {
+		return
+	}
+	if !tag.Update() || tag.RowsAffected() != 1 {
+		notifyErrorWebhook(fmt.Sprintf("sus tag on report resolve: %s\n%s", tag.String(), string(debug.Stack())))
+	}
+	basicLayoutLookupRespond("modReports", w, r, nil)
+}
