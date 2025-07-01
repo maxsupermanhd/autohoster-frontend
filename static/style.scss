@@ -239,6 +239,10 @@
   background-color: #555 !important;
   color: #ddd !important;
 }
+[data-theme="dark"] textarea {
+	background-color: #555 !important;
+	color: #ddd !important;
+}
 [data-theme='dark'] .pagination {
   --bs-pagination-bg: #252525 !important;
   --bs-pagination-border-color: #666a6f !important;
