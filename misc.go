@@ -359,7 +359,7 @@ func isAprilFools() bool {
 }
 
 func escapeBacktick(s string) string {
-	return strings.ReplaceAll(s, "`", "\\`")
+	return strings.ReplaceAll(strings.ReplaceAll(s, "\n", "\\n"), "`", "\\`")
 }
 
 func sendWebhook(url, content string) error {
