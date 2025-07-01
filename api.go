@@ -365,23 +365,21 @@ func APIgetReplayFile(w http.ResponseWriter, r *http.Request) (int, any) {
 func APIgetClassChartGame(_ http.ResponseWriter, r *http.Request) (int, any) {
 	params := mux.Vars(r)
 	gid := params["gid"]
-	reslog := "0"
-	derr := dbpool.QueryRow(r.Context(), `SELECT coalesce(research_log, '{}') FROM games WHERE id = $1;`, gid).Scan(&reslog)
-	if derr != nil {
-		if derr == pgx.ErrNoRows {
-			return 204, nil
-		}
-		return 500, derr
+	var reslog []resEntry
+	err := dbpool.QueryRow(r.Context(), `SELECT research_log FROM games WHERE id = $1;`, gid).Scan(&reslog)
+	if errors.Is(err, context.Canceled) {
+		return -1, nil
 	}
-	if reslog == "-1" {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return 204, nil
 	}
-	var resl []resEntry
-	err := json.Unmarshal([]byte(reslog), &resl)
 	if err != nil {
 		return 500, err
 	}
-	return 200, CountClassification(resl)
+	if reslog == nil {
+		return 204, nil
+	}
+	return 200, CountClassification(reslog)
 }
 
 func APIgetRatingCategories(_ http.ResponseWriter, r *http.Request) (int, any) {
