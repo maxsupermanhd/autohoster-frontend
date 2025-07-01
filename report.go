@@ -13,6 +13,7 @@ import (
 
 var (
 	reportViolations = []string{
+		`2. Abuse of the Autohoster, Autorating or any other related system (not listed)`,
 		`2.1.1. Disruption or other interference with the system with or without defined purpose.`,
 		`2.1.2. Advertizing or propaganda.`,
 		`2.1.3. Malicious behavior being either targeted at the system or it's users (i.e. distribution of malware, phishing, attempts at account compromise).`,
@@ -20,11 +21,14 @@ var (
 		`2.1.5. Match fixing.`,
 		`2.1.6. Impersonation or attempts at impersonation.`,
 		`2.1.7. Ban/punishment evasion.`,
+		`3. Lobby moderation (not listed)`,
 		`3.2.1. Excessive restriction Players participation in Games. (by moderators)`,
+		`4. Chat and nicknames (not listed)`,
 		`4.1.3. Personal and group insults, gender-based humiliation, sexual orientation, religion, and other topics that are not compatible with generally accepted morality principles and decency. This may include discussion of negative or controversial historical events or other obvious topics that can lead to dissent and insulting contexts.`,
 		`4.1.5. Political and religious propaganda.`,
 		`4.1.7. Any manifestations of Nazism, nationalism, incitement of interracial, interethnic, interfaith discord and hostility, calls for the overthrow of the government by force.`,
 		`4.1.8. Disclosure other players' personal data.`,
+		`5. Unsportsmanlike conduct (not listed)`,
 		`5.1.1. Actively blocking access to parts of the playfield. (Walling in teammates)`,
 		`5.1.2. Swapping Profile before starting the game.`,
 		`5.1.3. Getting spectator-level information while participating in a game as a player.`,
