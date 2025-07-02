@@ -32,7 +32,7 @@
 				{{/* <a class="nav-link {{ if eq .NavWhere "stats" }} active {{ end }}" href="/stats">Stats</a> */}}
 				{{if .IsSuperadmin}}
 				<li class="nav-item dropdown">
-					<a class="nav-link dropdown-toggle" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Admin</a>
+					<a class="nav-link dropdown-toggle" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Admin{{if .NotifNumbers.Admin.Total}}<sup><span class="red-notification-counter">{{.NotifNumbers.Admin.Total}}</span></sup>{{end}}</a>
 					<ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end" aria-labelledby="adminDropdown">
 						<li><a class="dropdown-item {{ if eq .NavWhere "modIdentities" }} active {{ end }}" href="/moderation/identities">Identities</a></li>
 						<li><a class="dropdown-item {{ if eq .NavWhere "modLogs" }} active {{ end }}" href="/moderation/logs">Logs</a></li>
@@ -40,8 +40,8 @@
 						<li><a class="dropdown-item {{ if eq .NavWhere "modBans" }} active {{ end }}" href="/moderation/bans">Bans</a></li>
 						<li><a class="dropdown-item {{ if eq .NavWhere "modNews" }} active {{ end }}" href="/moderation/news">News</a></li>
 						<li><a class="dropdown-item {{ if eq .NavWhere "modInstances" }} active {{ end }}" href="/moderation/instances">Instances</a></li>
-						<li><a class="dropdown-item {{ if eq .NavWhere "modNames" }} active {{ end }}" href="/moderation/names">Names</a></li>
-						<li><a class="dropdown-item {{ if eq .NavWhere "modReports" }} active {{ end }}" href="/moderation/reports">Reports</a></li>
+						<li><a class="dropdown-item {{ if eq .NavWhere "modNames" }} active {{ end }}" href="/moderation/names">Names{{if .NotifNumbers.Admin.Names}}<sup><span class="red-notification-counter">{{.NotifNumbers.Admin.Names}}</span></sup>{{end}}</a></li>
+						<li><a class="dropdown-item {{ if eq .NavWhere "modReports" }} active {{ end }}" href="/moderation/reports">Reports{{if .NotifNumbers.Admin.Reports}}<sup><span class="red-notification-counter">{{.NotifNumbers.Admin.Reports}}</span></sup>{{end}}</a></li>
 						<li><a class="dropdown-item {{ if eq .NavWhere "modDebug" }} active {{ end }}" href="/moderation/debug">Debug</a></li>
 					</ul>
 				</li>

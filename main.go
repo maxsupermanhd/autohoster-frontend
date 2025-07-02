@@ -87,7 +87,32 @@ func sessionAppendUser(r *http.Request, a map[string]any) map[string]any {
 		"HasIdentity": hasIdentities,
 	}
 	a["UserAuthorized"] = "True"
-	a["IsSuperadmin"] = isSuperadmin(r.Context(), sessionGetUsername(r))
+	isSa := isSuperadmin(r.Context(), sessionGetUsername(r))
+	a["IsSuperadmin"] = isSa
+
+	if isSa {
+		notifsAdminTotal := 0
+		notifsAdminReports := 0
+		err = dbpool.QueryRow(r.Context(), `select count(*) from reports where resolution is null`).Scan(&notifsAdminReports)
+		if DBErr(nil, r, err) {
+			return a
+		}
+		notifsAdminTotal += notifsAdminReports
+		notifsAdminNames := 0
+		err = dbpool.QueryRow(r.Context(), `select count(*) from names where status = 'pending'`).Scan(&notifsAdminNames)
+		if DBErr(nil, r, err) {
+			return a
+		}
+		notifsAdminTotal += notifsAdminNames
+		a["NotifNumbers"] = map[string]any{
+			"Admin": map[string]any{
+				"Total":   notifsAdminTotal,
+				"Names":   notifsAdminNames,
+				"Reports": notifsAdminReports,
+			},
+		}
+	}
+
 	return a
 }
 
