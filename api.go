@@ -36,6 +36,9 @@ func APIcall(c func(http.ResponseWriter, *http.Request) (int, any)) func(http.Re
 					response = bcontent
 				}
 			} else if econtent, ok := content.(error); ok {
+				if errors.Is(econtent, context.Canceled) {
+					return
+				}
 				log.Printf("Error inside handler [%v]: %v", r.URL.Path, econtent.Error())
 				notifyErrorWebhook(fmt.Sprintf("%s\n%s", econtent.Error(), string(debug.Stack())))
 				response, err = json.Marshal(map[string]any{"error": econtent.Error()})
