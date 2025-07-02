@@ -784,14 +784,14 @@
 				<thead>
 					<tr>
 						<th data-field="ID" data-sortable="true" data-filter-control="input">id</th>
+						<th data-formatter="actionsFormatter">act</th>
 						<th data-field="Whenreported" data-sortable="true" data-filter-control="input" data-formatter="SimpleTimeFromatter">reported</th>
 						<th data-field="Reporter" data-filter-control="input">Reporter</th>
 						<th data-field="Violation">Violation</th>
-						<th data-field="Violationtime">Violation Time</th>
+						{{/* <th data-field="Violationtime">Violation Time</th> */}}
 						<th data-field="Offender" data-formatter="OffenderFormat">Offender</th>
-						<th data-field="Comment">Comment</th>
-						<th data-field="Resolution">Resolution</th>
-						<th data-formatter="actionsFormatter">actions</th>
+						{{/* <th data-field="Comment">Comment</th> */}}
+						{{/* <th data-field="Resolution">Resolution</th> */}}
 					</tr>
 				</thead>
 			</table>
@@ -803,7 +803,17 @@
 			$table.bootstrapTable(Object.assign(defaultTableOptions, {
 				sortName: "ID",
 				url: "/api/reports",
-				uniqueId: "ID"
+				uniqueId: "ID",
+				detailView: true,
+				detailViewIcon: true,
+				detailFormatter: function (index, row) {
+					let ret = "<table>";
+					for(const key in row) {
+						ret += '<tr><td><b>' + key + ': </b></td><td><code><pre>' + row[key] + '</pre></pre></td></tr>';
+					}
+					ret += "</table>";
+					return ret;
+				},
 			}));
 		})
 		function OffenderFormat(value, row) {
